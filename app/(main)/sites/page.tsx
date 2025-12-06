@@ -1,19 +1,9 @@
+// app/sites/page.tsx
 "use client";
 
+import { useState, useMemo, useRef } from "react";
+import { useSites, type Site } from "@/hooks/useSites";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldContent, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -22,588 +12,732 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { Check, MapPin, PencilIcon, PlusIcon, Trash2, X } from "lucide-react";
-import React, { useEffect, useState, useCallback } from "react";
-import { toast } from "sonner";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2,
+  Plus,
+  Pencil,
+  Trash2,
+  AlertCircle,
+  MapPin,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  Filter,
+  X,
+  Download,
+  Globe,
+} from "lucide-react";
+import { SiteModal } from "@/components/sites/SiteModal";
+import { DeleteSiteModal } from "@/components/sites/DeleteSiteModal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { type SiteFormData } from "@/lib/validations/siteSchema";
 
-interface Site {
-  id: string;
+type SortField = "name" | "active" | "createdAt" | "updatedAt";
+type SortDirection = "asc" | "desc";
+
+interface ColumnFilters {
   name: string;
-  active: boolean;
+  active: string;
 }
-
-interface SiteFormData {
-  name: string;
-  active: boolean;
-}
-
-type DialogMode = "create" | "edit" | "delete";
 
 export default function SitesPage() {
-  // États
-  const [sites, setSites] = useState<Site[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const { sitesQuery, createSite, updateSite, deleteSite } = useSites();
+
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // États pour les dialogues
-  const [dialogMode, setDialogMode] = useState<DialogMode | null>(null);
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  // 🆕 États pour les nouvelles fonctionnalités
+  const [globalSearch, setGlobalSearch] = useState<string>("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+    name: "",
+    active: "",
+  });
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
-  // États pour les formulaires
-  const [form, setForm] = useState<SiteFormData>({ name: "", active: true });
+  // 🆕 Références pour garder le focus
+  const columnFilterRefs = useRef<{
+    name: HTMLInputElement | null;
+    active: HTMLInputElement | null;
+  }>({
+    name: null,
+    active: null,
+  });
 
-  // Gestionnaires de dialogues
-  const handleOpenDialog = useCallback((mode: DialogMode, site?: Site) => {
-    setDialogMode(mode);
-    setError(null);
-
-    if (mode === "edit" && site) {
-      setSelectedSite(site);
-      setForm({ name: site.name, active: site.active });
-    } else if (mode === "delete" && site) {
-      setSelectedSite(site);
-    } else if (mode === "create") {
-      setSelectedSite(null);
-      setForm({ name: "", active: true });
-    }
-  }, []);
-
-  const handleCloseDialog = useCallback(() => {
-    setDialogMode(null);
+  const handleCreate = (): void => {
     setSelectedSite(null);
-    setForm({ name: "", active: true });
     setError(null);
-  }, []);
+    setIsModalOpen(true);
+  };
 
-  // Fetch des sites
-  const fetchSites = useCallback(async () => {
+  const handleEdit = (site: Site): void => {
+    setSelectedSite(site);
+    setError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (site: Site): void => {
+    setSelectedSite(site);
+    setError(null);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseModal = (): void => {
+    setIsModalOpen(false);
+    setSelectedSite(null);
+    setError(null);
+  };
+
+  const handleCloseDeleteModal = (): void => {
+    setIsDeleteModalOpen(false);
+    setSelectedSite(null);
+    setError(null);
+  };
+
+  const handleSubmit = async (data: SiteFormData): Promise<void> => {
     try {
-      setLoading(true);
+      if (selectedSite) {
+        await updateSite.mutateAsync({ id: selectedSite.id, data });
+      } else {
+        await createSite.mutateAsync(data);
+      }
       setError(null);
-
-      const response = await fetch("/api/sites", {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      setSites(data);
-    } catch (err) {
+      handleCloseModal();
+    } catch (error) {
       const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue lors du chargement des sites";
+        error instanceof Error ? error.message : "Une erreur est survenue";
       setError(errorMessage);
-      toast.error("Erreur de chargement", {
-        description: errorMessage,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSites();
-  }, [fetchSites]);
-
-  // CRUD Operations
-  const createSite = useCallback(
-    async (siteData: SiteFormData): Promise<Site> => {
-      if (!siteData.name.trim()) {
-        throw new Error("Le nom du site est requis");
-      }
-
-      const response = await fetch("/api/sites", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: siteData.name.trim(),
-          active: siteData.active,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `Erreur ${response.status}`);
-      }
-
-      return data;
-    },
-    []
-  );
-
-  const updateSite = useCallback(
-    async (id: string, siteData: SiteFormData): Promise<Site> => {
-      if (!siteData.name.trim()) {
-        throw new Error("Le nom du site est requis");
-      }
-
-      const response = await fetch(`/api/sites/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: siteData.name.trim(),
-          active: siteData.active,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `Erreur ${response.status}`);
-      }
-
-      return data;
-    },
-    []
-  );
-
-  const deleteSite = useCallback(async (id: string): Promise<void> => {
-    const response = await fetch(`/api/sites/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `Erreur ${response.status}`);
-    }
-  }, []);
-
-  // Gestionnaires de soumission
-  const handleSubmitCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!form.name.trim()) {
-      toast.error("Validation", {
-        description: "Le nom du site est requis",
-      });
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      const newSite = await createSite(form);
-
-      // Mise à jour optimiste
-      setSites((prev) => [newSite, ...prev]);
-
-      toast.success("Site créé", {
-        description: `Le site "${newSite.name}" a été créé avec succès`,
-      });
-
-      handleCloseDialog();
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la création du site";
-
-      toast.error("Erreur de création", {
-        description: errorMessage,
-      });
-
-      await fetchSites();
-    } finally {
-      setSubmitting(false);
+      throw new Error(errorMessage);
     }
   };
 
-  const handleSubmitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedSite?.id) return;
-
-    if (!form.name.trim()) {
-      toast.error("Validation", {
-        description: "Le nom du site est requis",
-      });
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      const updatedSite = await updateSite(selectedSite.id, form);
-
-      // Mise à jour optimiste
-      setSites((prev) =>
-        prev.map((site) => (site.id === selectedSite.id ? updatedSite : site))
-      );
-
-      toast.success("Site modifié", {
-        description: `Le site "${updatedSite.name}" a été modifié avec succès`,
-      });
-
-      handleCloseDialog();
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Erreur lors de la modification du site";
-
-      toast.error("Erreur de modification", {
-        description: errorMessage,
-      });
-
-      await fetchSites();
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
+  const handleDeleteConfirm = async (): Promise<void> => {
     if (!selectedSite) return;
 
     try {
-      setSubmitting(true);
-
-      const siteId = selectedSite.id;
-      const siteName = selectedSite.name;
-
-      // Mise à jour optimiste
-      setSites((prev) => prev.filter((site) => site.id !== siteId));
-
-      await deleteSite(siteId);
-
-      toast.success("Site supprimé", {
-        description: `Le site "${siteName}" a été supprimé`,
-      });
-
-      handleCloseDialog();
-    } catch (err) {
+      await deleteSite.mutateAsync(selectedSite.id);
+      setError(null);
+      handleCloseDeleteModal();
+    } catch (error) {
       const errorMessage =
-        err instanceof Error ? err.message : "Erreur lors de la suppression";
-
-      toast.error("Erreur de suppression", {
-        description: errorMessage,
-      });
-
-      await fetchSites();
-    } finally {
-      setSubmitting(false);
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la suppression";
+      setError(errorMessage);
     }
   };
 
-  // Affichage des statuts
-  const getStatusBadge = (active: boolean) => {
-    return active ? (
-      <Badge>
-        <Check className="size-5" />
-        Active
-      </Badge>
-    ) : (
-      <Badge variant="secondary">
-        <X className="size-5" />
-        Inactif
-      </Badge>
-    );
+  // 🆕 Gestion du tri
+  const handleSort = (field: SortField): void => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+    setCurrentPage(1);
   };
 
-  // Titres et descriptions dynamiques pour les dialogues
-  const getDialogConfig = () => {
-    switch (dialogMode) {
-      case "create":
-        return {
-          title: "Créer un nouveau site",
-          description:
-            "Remplissez les informations pour créer un nouveau site.",
-          submitText: "Créer le site",
-          submitLoadingText: "Création...",
-        };
-      case "edit":
-        return {
-          title: "Modifier le site",
-          description: "Modifiez les informations du site.",
-          submitText: "Enregistrer les modifications",
-          submitLoadingText: "Modification...",
-        };
-      default:
-        return {
-          title: "",
-          description: "",
-          submitText: "",
-          submitLoadingText: "",
-        };
+  // 🆕 Gestion des filtres de colonnes avec conservation du focus
+  const handleColumnFilter = (
+    column: keyof ColumnFilters,
+    value: string
+  ): void => {
+    // Sauvegarder l'élément actif avant la mise à jour
+    const activeElement = document.activeElement as HTMLInputElement;
+
+    setColumnFilters((prev) => ({
+      ...prev,
+      [column]: value,
+    }));
+    setCurrentPage(1);
+
+    // Restaurer le focus après le re-rendu
+    setTimeout(() => {
+      if (activeElement && columnFilterRefs.current[column]) {
+        columnFilterRefs.current[column]?.focus();
+        // Optionnel: replacer le curseur à la fin du texte
+        if (columnFilterRefs.current[column]) {
+          const input = columnFilterRefs.current[column] as HTMLInputElement;
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      }
+    }, 0);
+  };
+
+  // 🆕 Réinitialiser tous les filtres
+  const handleClearFilters = (): void => {
+    setGlobalSearch("");
+    setColumnFilters({
+      name: "",
+      active: "",
+    });
+    setCurrentPage(1);
+  };
+
+  // 🆕 Filtrage et tri des données
+  const filteredAndSortedSites = useMemo((): Site[] => {
+    if (!sitesQuery.data) return [];
+
+    let filtered = sitesQuery.data.filter((site: Site) => {
+      // Filtre global
+      const globalMatch =
+        globalSearch === "" ||
+        site.name.toLowerCase().includes(globalSearch.toLowerCase());
+
+      // Filtres par colonne
+      const nameMatch =
+        columnFilters.name === "" ||
+        site.name.toLowerCase().includes(columnFilters.name.toLowerCase());
+
+      const activeMatch =
+        columnFilters.active === "" ||
+        (columnFilters.active === "actif" && site.active) ||
+        (columnFilters.active === "inactif" && !site.active);
+
+      return Boolean(globalMatch && nameMatch && activeMatch);
+    });
+
+    // Tri
+    filtered.sort((a: Site, b: Site) => {
+      let aValue: string | number | Date | boolean = "";
+      let bValue: string | number | Date | boolean = "";
+
+      switch (sortField) {
+        case "name":
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case "active":
+          aValue = a.active;
+          bValue = b.active;
+          break;
+        case "createdAt":
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        case "updatedAt":
+          aValue = new Date(a.updatedAt);
+          bValue = new Date(b.updatedAt);
+          break;
+        default:
+          aValue = a.name;
+          bValue = b.name;
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      } else if (aValue instanceof Date && bValue instanceof Date) {
+        return sortDirection === "asc"
+          ? aValue.getTime() - bValue.getTime()
+          : bValue.getTime() - aValue.getTime();
+      } else if (typeof aValue === "boolean" && typeof bValue === "boolean") {
+        return sortDirection === "asc"
+          ? aValue === bValue
+            ? 0
+            : aValue
+            ? -1
+            : 1
+          : aValue === bValue
+          ? 0
+          : aValue
+          ? 1
+          : -1;
+      }
+      return 0;
+    });
+
+    return filtered;
+  }, [sitesQuery.data, globalSearch, columnFilters, sortField, sortDirection]);
+
+  // 🆕 Pagination améliorée avec option "Tout afficher"
+  const totalItems: number = filteredAndSortedSites.length;
+  const showAll: boolean = itemsPerPage === -1;
+  const totalPages: number = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
+  const startIndex: number = showAll ? 0 : (currentPage - 1) * itemsPerPage;
+  const paginatedSites: Site[] = showAll
+    ? filteredAndSortedSites
+    : filteredAndSortedSites.slice(startIndex, startIndex + itemsPerPage);
+
+  const displayError: string | null =
+    error || sitesQuery.error?.message || null;
+
+  // 🆕 Vérifier s'il y a des filtres actifs
+  const hasActiveFilters: boolean =
+    globalSearch !== "" ||
+    Object.values(columnFilters).some((filter) => filter !== "");
+
+  // 🆕 Fonction d'export Excel
+  const handleExportToExcel = (): void => {
+    try {
+      // Préparer les données pour l'export
+      const exportData = filteredAndSortedSites.map((site: Site) => ({
+        Nom: site.name,
+        Statut: site.active ? "Actif" : "Inactif",
+        "Date de création": site.createdAt
+          ? new Date(site.createdAt).toLocaleDateString("fr-FR")
+          : "",
+        "Dernière modification": site.updatedAt
+          ? new Date(site.updatedAt).toLocaleDateString("fr-FR")
+          : "",
+      }));
+
+      // Convertir en CSV (format simple compatible avec Excel)
+      const headers = Object.keys(exportData[0] || {}).join(";");
+      const csvData = exportData
+        .map((row) =>
+          Object.values(row)
+            .map((value) => `"${value}"`)
+            .join(";")
+        )
+        .join("\n");
+
+      const csvContent = `${headers}\n${csvData}`;
+
+      // Créer et télécharger le fichier
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `sites_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erreur lors de l'export Excel:", error);
+      setError("Erreur lors de l'export des données");
     }
   };
 
-  // État de chargement
-  if (loading && sites.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Spinner className="h-12 w-12" />
-        <p className="text-muted-foreground">Chargement des sites...</p>
-      </div>
-    );
-  }
-
-  // État d'erreur
-  if (error && sites.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 p-4">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-destructive mb-2">
-            Erreur de chargement
-          </h2>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={fetchSites}>Réessayer</Button>
+  // 🆕 Composant d'en-tête de colonne avec tri amélioré
+  const SortableHeader = ({
+    field,
+    children,
+  }: {
+    field: SortField;
+    children: React.ReactNode;
+  }) => (
+    <TableHead
+      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center gap-1 group">
+        {children}
+        <div className="flex flex-col">
+          <ChevronUp
+            className={`h-3 w-3 -mb-1 ${
+              sortField === field && sortDirection === "asc"
+                ? "text-primary"
+                : "text-muted-foreground opacity-40"
+            }`}
+          />
+          <ChevronDown
+            className={`h-3 w-3 -mt-1 ${
+              sortField === field && sortDirection === "desc"
+                ? "text-primary"
+                : "text-muted-foreground opacity-40"
+            }`}
+          />
         </div>
       </div>
+    </TableHead>
+  );
+
+  if (sitesQuery.isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
-  const dialogConfig = getDialogConfig();
-
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Sites</h1>
-              <p className="text-muted-foreground">
-                {sites.length} site{sites.length !== 1 ? "s" : ""} au total
-              </p>
-            </div>
-          </CardTitle>
-          <CardDescription className="flex gap-1 items-center text-2xl">
-            <MapPin />
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <MapPin className="h-8 w-8" />
             Gestion des sites
-          </CardDescription>
-          <CardAction>
-            <Button
-              onClick={() => handleOpenDialog("create")}
-              className="sm:self-start"
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Nouveau site
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          {/* <div className="container mx-auto p-4 md:p-6"> */}
-          {/* Tableau des sites */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-1/2">Nom</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sites.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      Aucun site trouvé. Créez votre premier site.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sites.map((site) => (
-                    <TableRow key={site.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{site.name}</TableCell>
-                      <TableCell>{getStatusBadge(site.active)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleOpenDialog("edit", site)}
-                            title="Modifier"
-                          >
-                            <PencilIcon
-                              color="#6de38b"
-                              className="h-4 w-4 text-muted-foreground hover:text-blue-600 transition-colors"
-                            />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleOpenDialog("delete", site)}
-                            title="Supprimer"
-                          >
-                            <Trash2
-                              color="#e36d6d"
-                              className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors"
-                            />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Créez et gérez les sites de votre application
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* 🆕 Bouton d'export Excel */}
+          <Button
+            variant="outline"
+            onClick={handleExportToExcel}
+            disabled={filteredAndSortedSites.length === 0}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exporter Excel
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau site
+          </Button>
+        </div>
+      </div>
+
+      {displayError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{displayError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* 🆕 Barre de recherche globale améliorée */}
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher par nom..."
+              value={globalSearch}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setGlobalSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-10"
+            />
           </div>
 
-          {/* Dialogue de création/modification */}
-          {(dialogMode === "create" || dialogMode === "edit") && (
-            <Dialog
-              open={true}
-              onOpenChange={(open) => !open && handleCloseDialog()}
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+              className="flex items-center gap-2"
             >
-              <DialogContent className="sm:max-w-[425px]">
-                <form
-                  onSubmit={
-                    dialogMode === "create"
-                      ? handleSubmitCreate
-                      : handleSubmitEdit
-                  }
-                >
-                  <DialogHeader>
-                    <DialogTitle>{dialogConfig.title}</DialogTitle>
-                    <DialogDescription>
-                      {dialogConfig.description}
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="site-name" className="required">
-                        Nom du site
-                      </Label>
-                      <Input
-                        id="site-name"
-                        name="site-name"
-                        value={form.name}
-                        onChange={(e) =>
-                          setForm({ ...form, name: e.target.value })
-                        }
-                        placeholder="Ex: MonSite.fr"
-                        autoComplete="off"
-                        autoFocus
-                        required
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Field orientation="horizontal">
-                        <FieldContent className="flex-1">
-                          <FieldLabel>Statut</FieldLabel>
-                          <p className="text-sm text-muted-foreground">
-                            Le site sera-t-il activé immédiatement ?
-                          </p>
-                        </FieldContent>
-                        <Switch
-                          name="site-active"
-                          id="site-active"
-                          checked={form.active}
-                          onCheckedChange={(checked) =>
-                            setForm({ ...form, active: checked })
-                          }
-                        />
-                      </Field>
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCloseDialog}
-                      disabled={submitting}
-                    >
-                      Annuler
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                      {submitting ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          {dialogConfig.submitLoadingText}
-                        </>
-                      ) : (
-                        dialogConfig.submitText
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+              <X className="h-4 w-4" />
+              Effacer les filtres
+            </Button>
           )}
+        </div>
 
-          {/* Dialogue de suppression */}
-          {dialogMode === "delete" && (
-            <AlertDialog
-              open={true}
-              onOpenChange={(open) => !open && handleCloseDialog()}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Filter className="h-4 w-4" />
+            <span>Filtres actifs</span>
+            {globalSearch && (
+              <Badge variant="secondary" className="text-xs">
+                Recherche: "{globalSearch}"
+              </Badge>
+            )}
+            {Object.entries(columnFilters).map(
+              ([key, value]) =>
+                value && (
+                  <Badge key={key} variant="secondary" className="text-xs">
+                    {key}: "{value}"
+                  </Badge>
+                )
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 🆕 Contrôles de pagination en haut améliorés */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Afficher</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value: string) => {
+                const newItemsPerPage = value === "all" ? -1 : Number(value);
+                setItemsPerPage(newItemsPerPage);
+                setCurrentPage(1);
+              }}
             >
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette action est irréversible. Le site `{selectedSite?.name}
-                    ` sera définitivement supprimé.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={submitting}>
-                    Annuler
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleConfirmDelete}
-                    disabled={submitting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="all">Tout afficher</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">
+              {showAll ? "éléments" : "éléments par page"}
+            </span>
+          </div>
+          <span className="text-sm text-muted-foreground">
+            {totalItems} site(s) trouvé(s)
+            {!showAll &&
+              totalPages > 1 &&
+              ` • Page ${currentPage}/${totalPages}`}
+          </span>
+        </div>
+
+        {/* 🆕 Info d'export */}
+        {filteredAndSortedSites.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {filteredAndSortedSites.length} ligne(s) exportable(s)
+          </div>
+        )}
+      </div>
+
+      <div className="border rounded-lg bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortableHeader field="name">
+                <div className="space-y-2">
+                  <div className="font-medium">Nom</div>
+                  <Input
+                    ref={(el: HTMLInputElement | null) => {
+                      columnFilterRefs.current.name = el;
+                    }}
+                    placeholder="Filtrer..."
+                    value={columnFilters.name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleColumnFilter("name", e.target.value)
+                    }
+                    className="h-7 text-xs"
+                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
+                      e.stopPropagation()
+                    }
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                </div>
+              </SortableHeader>
+
+              <SortableHeader field="active">
+                <div className="space-y-2">
+                  <div className="font-medium">Statut</div>
+                  <Select
+                    value={columnFilters.active}
+                    onValueChange={(value: string) =>
+                      handleColumnFilter("active", value)
+                    }
                   >
-                    {submitting ? (
-                      <>
-                        <Spinner className="mr-2 h-4 w-4" />
-                        Suppression...
-                      </>
-                    ) : (
-                      "Supprimer définitivement"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          {/* </div> */}
-        </CardContent>
-        <CardFooter>
-          <p>Pagination</p>
-        </CardFooter>
-      </Card>
-    </>
+                    <SelectTrigger className="h-7 text-xs w-full">
+                      <SelectValue placeholder="Tous" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>{" "}
+                      {/* ← Changed from "" to "all" */}
+                      <SelectItem value="actif">Actif</SelectItem>
+                      <SelectItem value="inactif">Inactif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </SortableHeader>
+
+              <SortableHeader field="createdAt">
+                <span className="font-medium">Date de création</span>
+              </SortableHeader>
+
+              <SortableHeader field="updatedAt">
+                <span className="font-medium">Dernière modification</span>
+              </SortableHeader>
+
+              <TableHead className="text-right">
+                <span className="font-medium">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedSites.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-10 text-muted-foreground"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Globe className="h-12 w-12 opacity-20" />
+                    {sitesQuery.data?.length === 0
+                      ? "Aucun site trouvé"
+                      : "Aucun résultat correspondant aux filtres"}
+                    {filteredAndSortedSites.length === 0 &&
+                      sitesQuery.data &&
+                      sitesQuery.data.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleClearFilters}
+                          className="mt-2"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Effacer les filtres
+                        </Button>
+                      )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedSites.map((site: Site) => (
+                <TableRow key={site.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">{site.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={site.active ? "default" : "secondary"}
+                      className={
+                        site.active
+                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          : ""
+                      }
+                    >
+                      {site.active ? "Actif" : "Inactif"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(site.createdAt).toLocaleDateString("fr-FR")}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(site.updatedAt).toLocaleDateString("fr-FR")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(site)}
+                        className="h-8 w-8 p-0"
+                        disabled={deleteSite.isPending}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(site)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        disabled={deleteSite.isPending}
+                      >
+                        {deleteSite.isPending &&
+                        selectedSite?.id === site.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* 🆕 Pagination en bas améliorée */}
+      {!showAll && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+          <div className="text-sm text-muted-foreground">
+            Affichage de <strong>{startIndex + 1}</strong> à{" "}
+            <strong>{Math.min(startIndex + itemsPerPage, totalItems)}</strong>{" "}
+            sur <strong>{totalItems}</strong> sites
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setCurrentPage((prev: number) => Math.max(prev - 1, 1))
+              }
+              disabled={currentPage === 1}
+              className="flex items-center gap-1"
+            >
+              <ChevronDown className="h-4 w-4 rotate-90" />
+              Précédent
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 7) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 4) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNum = totalPages - 6 + i;
+                } else {
+                  pageNum = currentPage - 3 + i;
+                }
+
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setCurrentPage((prev: number) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1"
+            >
+              Suivant
+              <ChevronUp className="h-4 w-4 rotate-90" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <SiteModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        site={selectedSite ?? undefined}
+        onSubmit={handleSubmit}
+        isSubmitting={createSite.isPending || updateSite.isPending}
+        error={error ?? undefined}
+        title={selectedSite ? "Modifier le site" : "Créer un nouveau site"}
+        description={
+          selectedSite
+            ? "Modifiez les informations du site"
+            : "Remplissez les informations pour créer un nouveau site"
+        }
+      />
+
+      <DeleteSiteModal
+        open={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        site={selectedSite}
+        isDeleting={deleteSite.isPending && selectedSite?.id !== undefined}
+      />
+    </div>
   );
 }

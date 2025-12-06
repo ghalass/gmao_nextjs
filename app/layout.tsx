@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
-import Providers from "@/providers/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import QueryProvider from "@/components/QueryProviser";
 
 const cairo = Cairo({
   subsets: ["latin"],
@@ -12,8 +12,9 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "GMAO",
-  description: "Un GMAO pour maintenace",
+  title: "GMAO-PRO",
+  description:
+    "GMAO-PRO est une application web pour gestion de la maintenance assisté par ordinateur",
   authors: { name: "GHALASS", url: "ghalass.com" },
   icons: {
     icon: "/favicon.ico", // This sets the favicon
@@ -28,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${cairo.className}`}>
-        <Providers>
+        <QueryProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
@@ -38,7 +39,7 @@ export default function RootLayout({
             <Toaster position="top-center" />
             {children}
           </ThemeProvider>
-        </Providers>
+        </QueryProvider>
       </body>
     </html>
   );

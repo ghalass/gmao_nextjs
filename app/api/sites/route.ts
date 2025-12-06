@@ -1,22 +1,22 @@
 // app/api/sites/route.ts
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-// import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-// const resource = "site";
+import { prisma } from "@/lib/prisma";
+
+import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+
+const resource = "site";
 
 export async function GET(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    // const protectionError = await protectReadRoute(request, resource);
-    // if (protectionError) return protectionError;
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const sites = await prisma.site.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    // Simuler un délai réseau
-    await new Promise((resolve) => setTimeout(resolve, 3000));
     return NextResponse.json(sites);
   } catch (error) {
     console.error("Error fetching sites:", error);
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier la permission de création des sites
-    // const protectionError = await protectCreateRoute(request, resource);
-    // if (protectionError) return protectionError;
+    const protectionError = await protectCreateRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const body = await request.json();
     const { name, active = true } = body;
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         active,
       },
     });
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     return NextResponse.json(site, { status: 201 });
   } catch (error) {
     console.error("Error creating site:", error);

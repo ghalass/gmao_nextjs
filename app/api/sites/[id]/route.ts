@@ -1,12 +1,11 @@
 // app/api/sites/[id]/route.ts
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-// import prisma from "@/lib/prisma";
-// import {
-//   protectDeleteRoute,
-//   protectReadRoute,
-//   protectUpdateRoute,
-// } from "@/lib/rbac/middleware";
+import { prisma } from "@/lib/prisma";
+import {
+  protectDeleteRoute,
+  protectReadRoute,
+  protectUpdateRoute,
+} from "@/lib/rbac/middleware";
 
 const resource = "site";
 
@@ -15,8 +14,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // const protectionError = await protectReadRoute(request, resource);
-    // if (protectionError) return protectionError;
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const { id } = await params;
 
@@ -34,7 +33,7 @@ export async function GET(
     if (!site) {
       return NextResponse.json({ message: "Site non trouvé" }, { status: 404 });
     }
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     return NextResponse.json(site);
   } catch (error) {
     console.error("Error fetching site:", error);
@@ -50,8 +49,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // const protectionError = await protectUpdateRoute(request, resource);
-    // if (protectionError) return protectionError;
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const { id } = await params;
 
@@ -88,7 +87,7 @@ export async function PUT(
         ...(active !== undefined && { active }),
       },
     });
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     return NextResponse.json(site);
   } catch (error) {
     console.error("Error updating site:", error);
@@ -120,8 +119,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // const protectionError = await protectDeleteRoute(request, resource);
-    // if (protectionError) return protectionError;
+    const protectionError = await protectDeleteRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const { id } = await params;
 
@@ -143,7 +142,7 @@ export async function DELETE(
     await prisma.site.delete({
       where: { id },
     });
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     return NextResponse.json({ message: "Site supprimé avec succès" });
   } catch (error) {
     console.error("Error deleting site:", error);

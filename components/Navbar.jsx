@@ -2,7 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import ModeToggle from "@/components/ModeToggle";
-// import AuthButtons from "./AuthButtons";
+import AuthButtons from "./AuthButtons";
 import { APP_NAME } from "@/lib/constantes";
 import Link from "next/link";
 
@@ -21,7 +21,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <ModeToggle />
         <div className="h-6 w-px bg-border hidden sm:block" />
-        {/* <AuthButtons /> */}
+        <AuthButtons />
       </div>
     </header>
   );

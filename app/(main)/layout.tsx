@@ -10,17 +10,19 @@ export default function MainLayout({
   return (
     <SidebarProvider>
       {/* ----- STRUCTURE GLOBALE : sidebar + contenu principal ----- */}
-      <div className="flex  w-screen overflow-hidden  ">
+      <div className="flex min-h-screen max-w-[100vw] overflow-x-hidden">
         {/* ---------- Sidebar (colonne gauche) ---------- */}
         <AppSidebar />
 
         {/* ---------- Contenu principal (colonne droite) ---------- */}
-        <div className="flex flex-col flex-1 my-2 me-2">
+        <div className="flex flex-col flex-1 min-w-0">
           {/* Header horizontal */}
           <Navbar />
-          {/* Contenu principal */}
-          <main className="flex-1 overflow-y-hidden border rounded-b-md p-2">
-            {children}
+          {/* Contenu principal avec scroll */}
+          <main className="flex-1 overflow-y-auto p-3 md:p-4">
+            <div className="min-h-full rounded-lg border bg-background p-4">
+              {children}
+            </div>
           </main>
         </div>
       </div>
