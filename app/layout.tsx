@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/providers/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import Head from "next/head";
 
 const cairo = Cairo({
   subsets: ["latin"],
@@ -25,6 +26,9 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body className={`${cairo.className}`}>
         <Providers>
+          <Head>
+            <link rel="icon" href="./favicon.ico" />
+          </Head>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
