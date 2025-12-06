@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className={`${cairo.className}`}>
         <Providers>
           <Head>
-            <link rel="icon" href="./favicon.ico" />
+            <link rel="icon" href="favicon.ico" />
           </Head>
           <ThemeProvider
             attribute="class"
