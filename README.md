@@ -13,10 +13,7 @@ npx prisma init
 
 npx prisma migrate dev --name init
 
-# DÉPLOIEMENT
+ssh root@147.79.118.72
+Gh@l@s2025-1986
 
-me guider étape par étape avec détaille, commet déployer mon nextjs app sur VPS Ubuntu (hostinger), l'app utilise une base des données postgres (DATABASE_URL dans .env) avec prismaORM.
-DATABASE_URL="postgresql://postgres:root@localhost:5432/next_gmao_db?schema=public"
-base des données à créer lors de déploiement.
-et aussi utilise pnmp
-aussi il faut me donner la configuration qu'il faut faire pour nginx reverse proxy pour gmao.ghalass.com
+./deploy.sh

@@ -405,7 +405,7 @@ export default function SitesPage() {
           </CardTitle>
           <CardDescription className="flex gap-1 items-center text-2xl">
             <MapPin />
-            Gestion des sites !!
+            Gestion des sites
           </CardDescription>
           <CardAction>
             <Button
