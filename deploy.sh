@@ -3,7 +3,7 @@
 echo "🚀 Démarrage du déploiement..."
 
 # Aller dans le répertoire de l'application
-cd /var/www/gmao-app
+cd /var/www/gmao_nextjs
 
 # Pull les dernières modifications
 echo "📥 Récupération des dernières modifications..."
@@ -27,10 +27,10 @@ pnpm build
 
 # Redémarrer l'application avec PM2
 echo "🔄 Redémarrage de l'application..."
-pm2 restart gmao-app
+pm2 restart gmao_nextjs
 
 # Voir logs avec PM2
 echo "🔄 Logs de l'application..."
-pm2 pm2 logs gmao-app
+pm2 pm2 logs gmao_nextjs
 
 echo "✅ Déploiement terminé avec succès!"
