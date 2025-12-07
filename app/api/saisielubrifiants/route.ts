@@ -2,9 +2,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+
+const resource = "saisiehrm";
 
 export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const session = await getSession();
     if (!session?.userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -112,6 +119,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectCreateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const session = await getSession();
     if (!session?.userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });

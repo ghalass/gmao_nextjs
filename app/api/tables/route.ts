@@ -8,7 +8,7 @@ interface TableInfo {
 export async function GET() {
   try {
     const tables = await prisma.$queryRaw<TableInfo[]>`
-      SELECT table_name 
+      SELECT table_name::text as table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public'
       AND table_type = 'BASE TABLE'

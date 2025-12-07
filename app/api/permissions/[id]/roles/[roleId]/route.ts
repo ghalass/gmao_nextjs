@@ -5,7 +5,7 @@ import {
   assignPermissionToRole,
   removePermissionFromRole,
 } from "@/lib/rbac/core";
-import { protectCreateRoute, protectDeleteRoute } from "@/lib/rbac/middleware";
+import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
 
 const the_resource = "permissions";
 
@@ -14,7 +14,7 @@ export async function POST(
   context: { params: Promise<{ id: string; roleId: string }> } // ✅ Changé: permissionId → id
 ) {
   // 🔒 Vérifier les permissions
-  const protectionError = await protectCreateRoute(request, the_resource);
+  const protectionError = await protectUpdateRoute(request, the_resource);
   if (protectionError) return protectionError;
 
   const { id: permissionId, roleId } = await context.params; // ✅ Destructuration avec alias

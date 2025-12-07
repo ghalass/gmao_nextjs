@@ -2,12 +2,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { typeparcSchema } from "@/lib/validations/typeparcSchema";
+import {
+  protectDeleteRoute,
+  protectReadRoute,
+  protectUpdateRoute,
+} from "@/lib/rbac/middleware";
+
+const resource = "typeparc";
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
 
     const typeparc = await prisma.typeparc.findUnique({
@@ -43,6 +54,10 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
     const body = await request.json();
 
@@ -118,6 +133,10 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectDeleteRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
     const body = await request.json();
 

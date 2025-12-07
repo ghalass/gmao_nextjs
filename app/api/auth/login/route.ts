@@ -1,4 +1,4 @@
-// app/api/auth/login/route.ts
+// app/api/auth/login/route.ts - Version corrigée avec relations implicites
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -45,21 +45,20 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = parsedBody;
 
-    // ⚡ Inclusion sécurisée des rôles et permissions
+    // Rechercher l'utilisateur avec ses rôles et permissions
+    // Dans votre schéma, User a une relation directe avec Role
+    // Role a une relation implicite many-to-many avec Permission
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: {
+        email,
+        active: true, // Seulement les utilisateurs actifs peuvent se connecter
+      },
       include: {
+        // Relation directe User -> Role[]
         roles: {
           include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
+            // Relation implicite Role -> Permission[]
+            permissions: true, // Pas besoin de `include: { permission: true }` car c'est direct
           },
         },
       },
@@ -80,18 +79,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Préparer les données de session
+    const userRoles = user.roles.map((role) => role.name);
+
+    // Extraire toutes les permissions des rôles de l'utilisateur
+    // Avec la relation implicite, permissions est un tableau direct
+    const userPermissions = user.roles.flatMap((role) =>
+      role.permissions.map((permission) => ({
+        id: permission.id,
+        resource: permission.resource,
+        action: permission.action,
+        roleId: role.id,
+        roleName: role.name,
+      }))
+    );
+
     // SESSION
     const session = await getSession();
     session.userId = user.id;
     session.email = user.email;
-    session.roles = user.roles.map((r) => r.role.name);
+    session.name = user.name; // Ajout du nom dans la session
+    session.roles = userRoles;
+    session.permissions = userPermissions; // Stocker les permissions dans la session
     session.isLoggedIn = true;
     await session.save();
 
     // Supprimer le mot de passe avant de renvoyer l'utilisateur
     const { password: _, ...sanitizedUser } = user;
 
-    return NextResponse.json({ user: sanitizedUser }, { status: 200 });
+    // Formater la réponse avec les données structurées
+    const userResponse = {
+      ...sanitizedUser,
+      // Ajouter les permissions dans la réponse pour le frontend
+      permissions: userPermissions,
+      // Liste des noms de rôles pour faciliter les vérifications
+      roleNames: userRoles,
+    };
+
+    return NextResponse.json({ user: userResponse }, { status: 200 });
   } catch (error) {
     console.error("Erreur lors de la connexion:", error);
     return NextResponse.json(

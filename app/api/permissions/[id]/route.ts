@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getRouteParams } from "@/lib/routeParams";
 import {
   protectDeleteRoute,
   protectReadRoute,
@@ -12,14 +11,15 @@ export const dynamicParams = true;
 
 const the_resource = "permissions";
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
-    console.log("=== GET Permission Request ===");
-    const { id } = await getRouteParams(request);
-    console.log("GET request for permission ID:", id);
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
@@ -58,14 +58,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
-    console.log("=== PUT Permission Request ===");
-    const { id } = await getRouteParams(request);
-    console.log("PUT request for permission ID:", id);
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
@@ -132,12 +133,15 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
-    const { id } = await getRouteParams(request);
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(

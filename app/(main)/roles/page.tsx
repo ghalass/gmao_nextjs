@@ -40,12 +40,11 @@ import { Role } from "@/lib/types";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type SortField = "name" | "description" | "permissions";
+type SortField = "name" | "permissions";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
   name: string;
-  description: string;
   permissions: string;
 }
 
@@ -60,7 +59,6 @@ export default function RolesPage() {
   const [globalSearch, setGlobalSearch] = useState<string>("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
     name: "",
-    description: "",
     permissions: "",
   });
   const [sortField, setSortField] = useState<SortField>("name");
@@ -71,11 +69,9 @@ export default function RolesPage() {
   // 🆕 Références pour garder le focus
   const columnFilterRefs = useRef<{
     name: HTMLInputElement | null;
-    description: HTMLInputElement | null;
     permissions: HTMLInputElement | null;
   }>({
     name: null,
-    description: null,
     permissions: null,
   });
 
@@ -134,7 +130,6 @@ export default function RolesPage() {
     setGlobalSearch("");
     setColumnFilters({
       name: "",
-      description: "",
       permissions: "",
     });
     setCurrentPage(1);
@@ -162,13 +157,6 @@ export default function RolesPage() {
         columnFilters.name === "" ||
         role.name.toLowerCase().includes(columnFilters.name.toLowerCase());
 
-      const descriptionMatch =
-        columnFilters.description === "" ||
-        (role.description
-          ?.toLowerCase()
-          .includes(columnFilters.description.toLowerCase()) ??
-          false);
-
       const permissionsMatch =
         columnFilters.permissions === "" ||
         Boolean(
@@ -179,9 +167,7 @@ export default function RolesPage() {
           )
         );
 
-      return Boolean(
-        globalMatch && nameMatch && descriptionMatch && permissionsMatch
-      );
+      return Boolean(globalMatch && nameMatch && permissionsMatch);
     });
 
     // Tri
@@ -194,10 +180,7 @@ export default function RolesPage() {
           aValue = a.name;
           bValue = b.name;
           break;
-        case "description":
-          aValue = a.description || "";
-          bValue = b.description || "";
-          break;
+
         case "permissions":
           aValue = a.permissions?.[0]?.permission?.name || "";
           bValue = b.permissions?.[0]?.permission?.name || "";
@@ -243,7 +226,6 @@ export default function RolesPage() {
       // Préparer les données pour l'export
       const exportData = filteredAndSortedRoles.map((role: Role) => ({
         Nom: role.name,
-        Description: role.description || "",
         Permissions:
           role.permissions?.map((rp) => rp.permission?.name).join(", ") || "",
         "Nombre de permissions": role.permissions?.length || 0,
@@ -368,7 +350,7 @@ export default function RolesPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par nom, description ou permissions..."
+              placeholder="Rechercher par nom ou permissions..."
               value={globalSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setGlobalSearch(e.target.value);
@@ -486,31 +468,6 @@ export default function RolesPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="description">
-                <div className="space-y-2">
-                  <div className="font-medium">Description</div>
-                  <Input
-                    ref={(el: HTMLInputElement | null) => {
-                      columnFilterRefs.current.description = el;
-                    }}
-                    placeholder="Filtrer..."
-                    value={columnFilters.description}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleColumnFilter("description", e.target.value)
-                    }
-                    className="h-7 text-xs"
-                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
-                      e.stopPropagation()
-                    }
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                </div>
-              </SortableHeader>
-
               <SortableHeader field="permissions">
                 <div className="space-y-2">
                   <div className="font-medium">Permissions</div>
@@ -580,11 +537,7 @@ export default function RolesPage() {
                       {role.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {role.description || (
-                      <span className="text-muted-foreground/50">—</span>
-                    )}
-                  </TableCell>
+
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {role.permissions?.slice(0, 3).map((rolePermission) => (

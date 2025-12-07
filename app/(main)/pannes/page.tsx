@@ -378,7 +378,6 @@ export default function PannesPage() {
               </SortableHeader>
 
               <TableHead className="font-medium">Description</TableHead>
-              <TableHead className="font-medium">Engins associés</TableHead>
               <TableHead className="text-right font-medium">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -422,16 +421,6 @@ export default function PannesPage() {
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
                     {panne.typepanne?.description || "Aucune description"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        {getNombreEngins(panne)} engin(s)
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {getEnginsAssocies(panne)}
-                      </div>
-                    </div>
                   </TableCell>
 
                   <TableCell className="text-right">

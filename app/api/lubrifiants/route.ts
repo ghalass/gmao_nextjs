@@ -1,9 +1,16 @@
 // app/api/lubrifiants/route.ts
 import { prisma } from "@/lib/prisma";
+import { protectReadRoute } from "@/lib/rbac/middleware";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+const resource = "lubrifiant";
+
+export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const lubrifiants = await prisma.lubrifiant.findMany({
       include: {
         typelubrifiant: true,

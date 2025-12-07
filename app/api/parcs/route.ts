@@ -2,17 +2,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parcSchema } from "@/lib/validations/parcSchema";
+import { protectReadRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
 
-export async function GET() {
+const resource = "parc";
+
+export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const parcs = await prisma.parc.findMany({
       include: {
         typeparc: true,
         engins: true,
+        _count: {
+          select: {
+            engins: true,
+          },
+        },
       },
-      orderBy: {
-        name: "asc",
-      },
+      orderBy: [
+        { name: "asc" },
+        { typeparc: { name: "asc" } }, // Cela fonctionne dans certaines versions de Prisma
+      ],
     });
 
     return NextResponse.json(parcs);
@@ -27,6 +40,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const body = await request.json();
 
     const validatedData = await parcSchema.validate(body, {

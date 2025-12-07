@@ -106,6 +106,8 @@ export interface Typeparc {
   name: string;
 
   parcs?: Parc[];
+
+  totalEngins?: number;
 }
 
 export interface Parc {

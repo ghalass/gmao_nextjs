@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const sites = await prisma.site.findMany({
-      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { engins: true } } },
+      orderBy: { name: "desc" },
     });
 
     return NextResponse.json(sites);

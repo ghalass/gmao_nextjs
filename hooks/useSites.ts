@@ -6,8 +6,7 @@ export interface Site {
   id: string;
   name: string;
   active: boolean;
-  createdAt: string;
-  updatedAt: string;
+  _count?: { engins: number };
 }
 
 export interface SiteFormData {

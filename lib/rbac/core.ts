@@ -283,5 +283,5 @@ export async function isAdmin(userId: string): Promise<boolean> {
 
 // Fonction pour vérifier si l'utilisateur est super administrateur
 export async function isSuperAdmin(userId: string): Promise<boolean> {
-  return await hasRole(userId, "super-admin");
+  return await hasRole(userId, "super admin");
 }

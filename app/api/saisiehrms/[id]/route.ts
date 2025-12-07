@@ -2,12 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
+
+const resource = "site";
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const session = await getSession();
     if (!session.userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -72,6 +79,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectDeleteRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const session = await getSession();
     if (!session.userId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });

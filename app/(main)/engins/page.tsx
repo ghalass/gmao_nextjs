@@ -42,7 +42,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
 import { exportExcel } from "@/lib/xlsxFn";
 
-type SortField = "name" | "parc" | "site" | "status" | "pannesCount";
+type SortField = "name" | "parc" | "site" | "status";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -224,10 +224,7 @@ export default function EnginsPage() {
           aValue = a.active;
           bValue = b.active;
           break;
-        case "pannesCount":
-          aValue = a._count?.pannes || 0;
-          bValue = b._count?.pannes || 0;
-          break;
+
         default:
           aValue = a.name;
           bValue = b.name;
@@ -564,10 +561,6 @@ export default function EnginsPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="pannesCount">
-                <span className="font-medium">Pannes</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -619,11 +612,6 @@ export default function EnginsPage() {
                   <TableCell>
                     <Badge variant={engin?.active ? "default" : "secondary"}>
                       {engin?.active ? "Actif" : "Inactif"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {engin?._count?.pannes || 0} panne(s)
                     </Badge>
                   </TableCell>
 

@@ -14,9 +14,17 @@ export async function verifyPassword(password: string, hashedPassword: string) {
 
 export type SessionData = {
   userId: string;
+  name: string;
   email: string;
   roles: string[];
   isLoggedIn: boolean;
+  permissions: {
+    id: string;
+    resource: string;
+    action: string | null;
+    roleId: string;
+    roleName: string;
+  }[];
 };
 
 export const sessionOptions = {

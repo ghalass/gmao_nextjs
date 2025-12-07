@@ -22,9 +22,8 @@ export interface userCreateDto {
   role: string;
 }
 
-// =======================================================
-// ✅ HOOK PRINCIPAL
-// =======================================================
+const entity = "utilisateurs";
+
 export function useUsers() {
   const queryClient = useQueryClient();
 
@@ -33,8 +32,11 @@ export function useUsers() {
     queryKey: ["users"],
     queryFn: async (): Promise<User[]> => {
       const response = await fetch(`${API}/users`);
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des utilisateurs");
+        throw new Error(
+          data.message || `Erreur lors du chargement des ${entity || "données"}`
+        );
       }
       return response.json();
     },
@@ -49,10 +51,10 @@ export function useUsers() {
         body: JSON.stringify({ email, name, password, role }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
         throw new Error(
-          error.message || "Erreur lors de la création d'un utilisateur"
+          data.message || `Erreur lors du création des ${entity || "données"}`
         );
       }
       return response.json();
@@ -81,10 +83,11 @@ export function useUsers() {
         body: JSON.stringify({ email, name, password, role }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
         throw new Error(
-          error.message || "Erreur lors de la modification d'un utilisateur"
+          data.message ||
+            `Erreur lors du mise à jour des ${entity || "données"}`
         );
       }
 
@@ -105,10 +108,11 @@ export function useUsers() {
     mutationFn: async ({ id }) => {
       const response = await fetch(`${API}/users/${id}`, { method: "DELETE" });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
         throw new Error(
-          error.message || "Erreur lors de la suppression d'un utilisateur"
+          data.message ||
+            `Erreur lors du suppression des ${entity || "données"}`
         );
       }
 
@@ -138,10 +142,11 @@ export function useUsers() {
         body: JSON.stringify({ name, email, password }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
         throw new Error(
-          error.message || "Erreur lors de la mise à jour du profil"
+          data.message ||
+            `Erreur lors du mise à jour des ${entity || "données"}`
         );
       }
 
@@ -174,14 +179,13 @@ export function useUsers() {
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const error = await response.json();
         throw new Error(
-          error.message || "Erreur lors du changement de mot de passe"
+          data.message ||
+            `Erreur lors du mise à jour des ${entity || "données"}`
         );
       }
-
-      toast.success("Mot de passe modifié avec succès !");
       return response.json();
     },
     onError: (error: any) => {

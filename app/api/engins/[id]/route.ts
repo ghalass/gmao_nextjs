@@ -2,6 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { enginSchema } from "@/lib/validations/enginSchema";
+import {
+  protectDeleteRoute,
+  protectReadRoute,
+  protectUpdateRoute,
+} from "@/lib/rbac/middleware";
 
 interface Context {
   params: Promise<{
@@ -9,8 +14,14 @@ interface Context {
   }>;
 }
 
+const resource = "lubrifiant";
+
 export async function GET(request: NextRequest, context: Context) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
 
     if (!id) {
@@ -93,6 +104,10 @@ export async function GET(request: NextRequest, context: Context) {
 
 export async function PUT(request: NextRequest, context: Context) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
 
     if (!id) {
@@ -212,6 +227,10 @@ export async function PUT(request: NextRequest, context: Context) {
 
 export async function DELETE(request: NextRequest, context: Context) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectDeleteRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
 
     if (!id) {

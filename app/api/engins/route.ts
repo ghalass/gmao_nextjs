@@ -2,9 +2,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { enginSchema } from "@/lib/validations/enginSchema";
+import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-export async function GET() {
+const resource = "lubrifiant";
+
+export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const engins = await prisma.engin.findMany({
       include: {
         parc: {
@@ -22,14 +29,6 @@ export async function GET() {
             id: true,
             name: true,
             active: true,
-          },
-        },
-        _count: {
-          select: {
-            // CORRECTION: Utilisez les noms exacts des champs dans votre modèle
-            saisiehrm: true, // minuscule (comme dans le schéma)
-            saisiehim: true, // minuscule (comme dans le schéma)
-            anomalies: true, // minuscule (comme dans le schéma)
           },
         },
       },
@@ -50,6 +49,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectCreateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const body = await request.json();
 
     const validatedData = await enginSchema.validate(body, {
@@ -111,15 +114,6 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             active: true,
-          },
-        },
-        _count: {
-          select: {
-            // CORRECTION: Utilisez les bonnes relations
-            saisiehrm: true,
-            saisiehim: true,
-            anomalies: true,
-            // Supprimez "pannes: true" car cette relation n'existe pas directement
           },
         },
       },

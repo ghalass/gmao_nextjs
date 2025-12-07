@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import yup from "@/lib/yupFr";
+import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
 // Schéma de validation Yup
 const typeparcSchema = yup.object().shape({
@@ -16,16 +17,47 @@ const typeparcSchema = yup.object().shape({
     ),
 });
 
-export async function GET() {
+const resource = "typeparc";
+
+export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const typeparcs = await prisma.typeparc.findMany({
-      include: { parcs: true },
+      include: {
+        parcs: {
+          include: {
+            engins: true,
+            _count: {
+              select: {
+                engins: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            parcs: true,
+          },
+        },
+      },
       orderBy: {
         name: "asc",
       },
     });
 
-    return NextResponse.json(typeparcs);
+    // Optionnel : Calculer le nombre total d'engins par typeparc
+    const typeparcsWithEnginsCount = typeparcs.map((typeparc) => ({
+      ...typeparc,
+      totalEngins: typeparc.parcs.reduce(
+        (sum, parc) => sum + (parc._count?.engins || 0),
+        0
+      ),
+    }));
+
+    return NextResponse.json(typeparcsWithEnginsCount);
   } catch (error) {
     console.error("Error fetching typeparcs:", error);
     return NextResponse.json(
@@ -37,6 +69,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectCreateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const body = await request.json();
 
     // Validation avec Yup

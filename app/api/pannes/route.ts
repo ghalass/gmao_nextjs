@@ -1,72 +1,26 @@
 // app/api/pannes/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { protectReadRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
+
+const resource = "panne";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
-    const typepanneId = searchParams.get("typepanneId");
-    const enginId = searchParams.get("enginId");
-
-    const where: any = {};
-
-    if (search) {
-      where.OR = [{ name: { contains: search, mode: "insensitive" } }];
-    }
-
-    if (typepanneId) where.typepanneId = typepanneId;
-
-    // Note: Dans votre schéma, Panne n'a pas de relation directe avec Engin
-    // via un champ enginId. La relation est indirecte via Saisiehim.
-    // Nous ne pouvons donc pas filtrer directement par enginId.
-    // Si vous avez besoin de cette fonctionnalité, vous devrez ajuster la logique.
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
 
     const pannes = await prisma.panne.findMany({
-      where,
       include: {
         typepanne: true,
-        saisiehim: {
-          include: {
-            engin: {
-              include: {
-                site: true,
-                parc: true,
-              },
-            },
-            saisiehrm: {
-              select: {
-                du: true,
-                hrm: true,
-              },
-            },
-          },
-        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    // Transformez les données pour les adapter à l'interface attendue
-    const transformedPannes = pannes.map((panne) => ({
-      ...panne,
-      // Créez une propriété engin dérivée (prend le premier engin des saisiehim)
-      engin: panne.saisiehim.length > 0 ? panne.saisiehim[0].engin : null,
-      // Compter les saisiehim comme "interventions"
-      interventionsCount: panne.saisiehim.length,
-      // Calculer la dernière date de saisie
-      derniereSaisie:
-        panne.saisiehim.length > 0
-          ? panne.saisiehim.reduce((latest, saisie) =>
-              new Date(saisie.createdAt) > new Date(latest.createdAt)
-                ? saisie
-                : latest
-            ).createdAt
-          : null,
-    }));
-
-    return NextResponse.json(transformedPannes);
+    return NextResponse.json(pannes);
   } catch (error) {
     console.error("Erreur lors du chargement des pannes:", error);
     return NextResponse.json(
@@ -78,6 +32,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const body = await request.json();
 
     // Validation basique

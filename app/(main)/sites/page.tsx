@@ -41,7 +41,7 @@ import { DeleteSiteModal } from "@/components/sites/DeleteSiteModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { type SiteFormData } from "@/lib/validations/siteSchema";
 
-type SortField = "name" | "active" | "createdAt" | "updatedAt";
+type SortField = "name" | "active";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -225,14 +225,7 @@ export default function SitesPage() {
           aValue = a.active;
           bValue = b.active;
           break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
-        case "updatedAt":
-          aValue = new Date(a.updatedAt);
-          bValue = new Date(b.updatedAt);
-          break;
+
         default:
           aValue = a.name;
           bValue = b.name;
@@ -242,10 +235,6 @@ export default function SitesPage() {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
       } else if (typeof aValue === "boolean" && typeof bValue === "boolean") {
         return sortDirection === "asc"
           ? aValue === bValue
@@ -289,12 +278,6 @@ export default function SitesPage() {
       const exportData = filteredAndSortedSites.map((site: Site) => ({
         Nom: site.name,
         Statut: site.active ? "Actif" : "Inactif",
-        "Date de création": site.createdAt
-          ? new Date(site.createdAt).toLocaleDateString("fr-FR")
-          : "",
-        "Dernière modification": site.updatedAt
-          ? new Date(site.updatedAt).toLocaleDateString("fr-FR")
-          : "",
       }));
 
       // Convertir en CSV (format simple compatible avec Excel)
@@ -554,13 +537,9 @@ export default function SitesPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
-              <SortableHeader field="updatedAt">
-                <span className="font-medium">Dernière modification</span>
-              </SortableHeader>
+              <TableHead className="text-right">
+                <span className="font-medium">Nombre des engins</span>
+              </TableHead>
 
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
@@ -611,12 +590,10 @@ export default function SitesPage() {
                       {site.active ? "Actif" : "Inactif"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(site.createdAt).toLocaleDateString("fr-FR")}
+                  <TableCell className="text-muted-foreground ">
+                    {site?._count?.engins}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(site.updatedAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

@@ -1,14 +1,8 @@
 // lib/rbac/middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { hasPermission, hasRole } from "./core";
+import { hasPermission, isAdmin, isSuperAdmin } from "./core";
 import { getSession } from "../auth";
-
-const enum ACTION {
-  CREATE = "create",
-  READ = "read",
-  UPDATE = "update",
-  DELETE = "delete",
-}
+import { ACTION } from "../enums";
 
 export async function protectRoute(
   request: NextRequest,
@@ -26,9 +20,9 @@ export async function protectRoute(
       );
 
     const userId = session?.userId;
-    const isAdmin = await hasRole(userId, "admin");
-    const isSuperAdmin = await hasRole(userId, "super-admin");
-    const isAdminOrSuperAdmin = isAdmin || isSuperAdmin;
+    const is_Admin = await isAdmin(userId);
+    const is_SuperAdmin = await isSuperAdmin(userId);
+    const isAdminOrSuperAdmin = is_Admin || is_SuperAdmin;
 
     // Accès automatique pour les administrateurs et super-administrateurs
     if (isAdminOrSuperAdmin) {

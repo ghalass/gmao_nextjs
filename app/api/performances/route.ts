@@ -1,4 +1,4 @@
-// app/api/performances/route.ts - Version corrigée
+// app/api/performances/route.ts - Version corrigée selon le schéma
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,30 +27,35 @@ export async function GET(request: NextRequest) {
           include: {
             parc: {
               include: {
-                typeparc: true,
+                typeparc: true, // Note: Majuscule selon le schéma
               },
             },
+            site: true,
           },
         },
         site: true,
         saisiehim: {
+          // Note: Majuscule selon le schéma
           include: {
             panne: {
+              // Note: Majuscule selon le schéma
               include: {
-                typepanne: true, // ← CORRECTION: seulement typepanne
+                typepanne: true, // Note: Majuscule selon le schéma
               },
             },
             saisielubrifiant: {
-              // ← CORRECTION: singulier
+              // Note: Majuscule selon le schéma
               include: {
                 lubrifiant: {
+                  // Note: Majuscule selon le schéma
                   include: {
-                    typelubrifiant: true,
+                    typelubrifiant: true, // Note: Majuscule selon le schéma
                   },
                 },
-                typeconsommationlub: true,
+                typeconsommationlub: true, // Note: Majuscule selon le schéma
               },
             },
+            engin: true, // Relation optionnelle selon le schéma
           },
         },
       },
@@ -59,7 +64,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(performances);
+    // Formater la réponse pour maintenir la compatibilité
+    const formattedPerformances = performances.map((performance) => ({
+      ...performance,
+      saisiehim: performance.saisiehim, // Renommer pour la compatibilité
+      saisiehim: undefined, // Supprimer le champ original
+    }));
+
+    return NextResponse.json(formattedPerformances);
   } catch (error) {
     console.error("Erreur lors de la récupération des performances:", error);
     return NextResponse.json(
@@ -89,6 +101,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Vérifier que l'engin appartient au site spécifié
+    const engin = await prisma.engin.findUnique({
+      where: { id: enginId },
+      include: { site: true },
+    });
+
+    if (!engin) {
+      return NextResponse.json({ error: "engin non trouvé" }, { status: 404 });
+    }
+
+    if (engin.siteId !== siteId) {
+      return NextResponse.json(
+        { error: "L'engin n'appartient pas au site spécifié" },
+        { status: 400 }
+      );
+    }
+
     // Créer la saisie HRM avec toutes les relations
     const performance = await prisma.saisiehrm.create({
       data: {
@@ -102,15 +131,14 @@ export async function POST(request: NextRequest) {
               panneId: him.panneId,
               him: parseFloat(him.him),
               ni: parseInt(him.ni),
-              obs: him.obs,
+              obs: him.obs || null,
               enginId: enginId,
               saisielubrifiant: {
-                // ← CORRECTION: singulier
                 create:
                   him.saisielubrifiants?.map((lub: any) => ({
                     lubrifiantId: lub.lubrifiantId,
                     qte: parseFloat(lub.qte),
-                    obs: lub.obs,
+                    obs: lub.obs || null,
                     typeconsommationlubId: lub.typeconsommationlubId || null,
                   })) || [],
               },
@@ -125,6 +153,7 @@ export async function POST(request: NextRequest) {
                 typeparc: true,
               },
             },
+            site: true,
           },
         },
         site: true,
@@ -132,11 +161,10 @@ export async function POST(request: NextRequest) {
           include: {
             panne: {
               include: {
-                typepanne: true, // ← CORRECTION: seulement typepanne
+                typepanne: true,
               },
             },
             saisielubrifiant: {
-              // ← CORRECTION: singulier
               include: {
                 lubrifiant: {
                   include: {
@@ -146,14 +174,31 @@ export async function POST(request: NextRequest) {
                 typeconsommationlub: true,
               },
             },
+            engin: true,
           },
         },
       },
     });
 
-    return NextResponse.json(performance);
-  } catch (error) {
+    // Formater la réponse pour maintenir la compatibilité
+    const formattedPerformance = {
+      ...performance,
+      saisiehim: performance.saisiehim,
+      saisiehim: undefined,
+    };
+
+    return NextResponse.json(formattedPerformance);
+  } catch (error: any) {
     console.error("Erreur lors de la création de la performance:", error);
+
+    // Gérer les erreurs de contrainte unique
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Une saisie existe déjà pour cet engin à cette date" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Erreur lors de la création de la performance" },
       { status: 500 }

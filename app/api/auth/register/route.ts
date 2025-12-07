@@ -75,6 +75,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    console.log("####################");
+    console.log(body);
 
     const { email, name, password } = body;
 
@@ -101,16 +103,16 @@ export async function POST(request: Request) {
         email,
         name,
         password: hashedPassword,
+        active: true,
+        // Assigner le rôle (utiliser l'ID directement)
         roles: {
-          create: role.map((roleId: string) => ({
-            roleId,
-          })),
+          connect: [{ id: role[0] }],
         },
       },
       include: {
         roles: {
           include: {
-            role: true,
+            permissions: true,
           },
         },
       },

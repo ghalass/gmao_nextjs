@@ -1,3 +1,5 @@
+// components/AuthButtons.tsx - Version corrigée
+
 "use client";
 
 import { useUser } from "@/context/UserContext";
@@ -17,7 +19,7 @@ import LogoutButton from "./LogoutButton";
 export default function AuthButtons() {
   const { user } = useUser();
 
-  // Si user est null ou n'a pas de roles, afficher le statut de chargement ou les boutons de connexion
+  // Si user est null, afficher les boutons de connexion
   if (!user) {
     return (
       <div className="flex items-center gap-2">
@@ -38,8 +40,26 @@ export default function AuthButtons() {
   }
 
   // Vérification sécurisée pour les roles
+  // Selon votre nouveau schéma, user.roles est un tableau direct de Role
+  // OU selon l'API register/login, user.roleNames est un tableau de noms de rôles
   const userRoles = user.roles || [];
-  const roleNames = userRoles.map((r) => r.role.name).join(", ");
+  const roleNames = user.roleNames || []; // Nouvelles propriétés de l'API
+
+  // Extraire les noms de rôles selon la structure
+  let displayRoleNames: string;
+
+  if (roleNames.length > 0) {
+    // Utiliser user.roleNames si disponible (nouvelle API)
+    displayRoleNames = roleNames.join(", ");
+  } else if (userRoles.length > 0 && userRoles[0].name) {
+    // Si user.roles existe et a des objets avec .name (structure directe)
+    displayRoleNames = userRoles.map((r: any) => r.name).join(", ");
+  } else if (userRoles.length > 0 && userRoles[0].role?.name) {
+    // Ancienne structure imbriquée (compatibilité)
+    displayRoleNames = userRoles.map((r: any) => r.role?.name).join(", ");
+  } else {
+    displayRoleNames = "";
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -56,9 +76,9 @@ export default function AuthButtons() {
                 {user.name}
               </div>
               <div className="text-xs text-muted-foreground">
-                {userRoles.length > 0 ? (
+                {displayRoleNames ? (
                   <Badge variant="secondary" className="text-xs capitalize">
-                    {roleNames}
+                    {displayRoleNames}
                   </Badge>
                 ) : (
                   <span className="text-muted-foreground">Aucun rôle</span>
@@ -72,7 +92,7 @@ export default function AuthButtons() {
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium">{user.name}</p>
               <p className="text-xs text-muted-foreground capitalize">
-                {roleNames || "Aucun rôle"}
+                {displayRoleNames || "Aucun rôle"}
               </p>
             </div>
           </DropdownMenuLabel>

@@ -1,9 +1,16 @@
 // app/api/typepannes/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-export async function GET() {
+const resource = "typepanne";
+
+export async function GET(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const typepannes = await prisma.typepanne.findMany({
       include: {
         _count: {
@@ -30,6 +37,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectCreateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     const body = await request.json();
     const { name, description } = body;
 

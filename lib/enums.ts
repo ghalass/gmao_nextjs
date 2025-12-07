@@ -1,6 +1,6 @@
-export enum Operation {
-  CREATE,
-  UPDATE,
-  DELETE,
-  READ,
+export enum ACTION {
+  CREATE = "create",
+  READ = "read",
+  UPDATE = "update",
+  DELETE = "delete",
 }

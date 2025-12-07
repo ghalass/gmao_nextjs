@@ -1,12 +1,22 @@
 // app/api/typepannes/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  protectDeleteRoute,
+  protectReadRoute,
+  protectUpdateRoute,
+} from "@/lib/rbac/middleware";
+
+const resource = "typepanne";
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectReadRoute(request, resource);
+    if (protectionError) return protectionError;
     // Attendre les params
     const { id } = await context.params;
 
@@ -44,6 +54,10 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectUpdateRoute(request, resource);
+    if (protectionError) return protectionError;
+
     // Attendre les params en premier
     const { id } = await context.params;
     const body = await request.json();
@@ -114,6 +128,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectDeleteRoute(request, resource);
+    if (protectionError) return protectionError;
+
     // Attendre les params
     const { id } = await context.params;
 

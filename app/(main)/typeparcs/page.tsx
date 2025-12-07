@@ -463,7 +463,11 @@ export default function TypeparcsPage() {
                 </div>
               </SortableHeader>
 
-              <TableHead className="font-medium">Nombre de parcs</TableHead>
+              <TableHead className="font-medium">Nombre des parcs</TableHead>
+
+              <TableHead className="text-right">
+                <span className="font-medium">Nombre des engins</span>
+              </TableHead>
 
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
@@ -505,6 +509,12 @@ export default function TypeparcsPage() {
                   <TableCell>
                     <Badge variant="secondary">
                       {typeparc.parcs?.length || 0} parc(s)
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {typeparc?.totalEngins || 0} engin(s)
                     </Badge>
                   </TableCell>
 
