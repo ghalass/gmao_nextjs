@@ -230,14 +230,14 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500 mt-4 text-center">
             Pas de compte ?{" "}
             <Link href="/register" className="text-blue-500 hover:underline">
-              S’inscrire
+              {"S'inscrire"}
             </Link>
           </p>
-          {/* <p className="text-sm text-gray-500 mt-4 text-center">
+          <p className="text-sm text-gray-500 mt-4 text-center">
             <Link href="/" className="text-blue-500 hover:underline">
-              Page d'acceuil
+              {"Page d'acceuil"}
             </Link>
-          </p> */}
+          </p>
         </CardFooter>
       </Card>
     </div>

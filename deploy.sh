@@ -33,10 +33,6 @@ pnpm build
 
 # Redémarrer l'application avec PM2
 echo "🔄 Redémarrage de l'application..."
-pm2 restart gmao_nextjs
-
-# Voir logs avec PM2
-echo "🔄 Logs de l'application..."
-pm2 logs gmao_nextjs
+pm2 restart gmao-app
 
 echo "✅ Déploiement terminé avec succès!"

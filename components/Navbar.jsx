@@ -5,8 +5,10 @@ import ModeToggle from "@/components/ModeToggle";
 import AuthButtons from "./AuthButtons";
 import { APP_NAME } from "@/lib/constantes";
 import Link from "next/link";
+import { useUser } from "@/context/UserContext";
 
 export default function Navbar() {
+  const { user } = useUser();
   return (
     <header className="flex items-center justify-between px-4 py-3 border-l border-r border-t rounded-t-md bg-background/95 backdrop-blur">
       <div className="flex items-center gap-4">
@@ -21,7 +23,11 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <ModeToggle />
         <div className="h-6 w-px bg-border hidden sm:block" />
-        <AuthButtons />
+        {!user.user ? (
+          <Link href={"/login"}>Se connecter</Link>
+        ) : (
+          <AuthButtons />
+        )}
       </div>
     </header>
   );
