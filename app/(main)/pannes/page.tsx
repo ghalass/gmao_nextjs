@@ -383,7 +383,7 @@ export default function PannesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {JSON.stringify(typesPanne)}
+            {/* {JSON.stringify(typesPanne)} */}
             {paginatedPannes.length === 0 ? (
               <TableRow>
                 <TableCell
