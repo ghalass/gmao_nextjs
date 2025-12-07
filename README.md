@@ -24,3 +24,5 @@ ssh root@147.79.118.72
 Gh@l@s2025-1986
 
 ./deploy.sh
+
+chmod +x deploy.sh

@@ -1,4 +1,4 @@
-// app/api/permissions/[permissionId]/roles/[roleId]/route.ts
+// app/api/permissions/[id]/roles/[roleId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -11,16 +11,16 @@ const the_resource = "permissions";
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ permissionId: string; roleId: string }> }
+  context: { params: Promise<{ id: string; roleId: string }> }
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectCreateRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { permissionId, roleId } = await context.params;
+  const { id, roleId } = await context.params;
 
   try {
-    await assignPermissionToRole(roleId, permissionId);
+    await assignPermissionToRole(roleId, id);
 
     return NextResponse.json({
       message: "Permission assignée au rôle avec succès",
@@ -44,16 +44,16 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ permissionId: string; roleId: string }> }
+  context: { params: Promise<{ id: string; roleId: string }> }
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectDeleteRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { permissionId, roleId } = await context.params;
+  const { id, roleId } = await context.params;
 
   try {
-    await removePermissionFromRole(roleId, permissionId);
+    await removePermissionFromRole(roleId, id);
 
     return NextResponse.json({
       message: "Permission retirée du rôle avec succès",

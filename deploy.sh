@@ -31,6 +31,6 @@ pm2 restart gmao_nextjs
 
 # Voir logs avec PM2
 echo "🔄 Logs de l'application..."
-pm2 pm2 logs gmao_nextjs
+pm2 logs gmao_nextjs
 
 echo "✅ Déploiement terminé avec succès!"
