@@ -10,13 +10,13 @@ const resource = "user";
 // PATCH - Mettre à jour un utilisateur
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const protectionError = await protectUpdateRoute(request, resource);
     if (protectionError) return protectionError;
 
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await request.json();
 
     // Validation avec Yup
@@ -109,13 +109,13 @@ export async function PATCH(
 // DELETE - Supprimer un utilisateur
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const protectionError = await protectDeleteRoute(request, resource);
     if (protectionError) return protectionError;
 
-    const { id } = await params;
+    const { id } = await context.params;
 
     // Vérifier si l'utilisateur existe
     const existingUser = await prisma.user.findUnique({

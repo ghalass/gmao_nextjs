@@ -159,14 +159,12 @@ export function HimModal({
                   <SelectValue placeholder="Sélectionner une panne" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pannes
-                    .filter((panne) => panne.enginId === formik.values.enginId)
-                    .map((panne) => (
-                      <SelectItem key={panne.id} value={panne.id}>
-                        {panne.code ? `${panne.code} - ` : ""}
-                        {panne.description}
-                      </SelectItem>
-                    ))}
+                  {pannes.map((panne) => (
+                    <SelectItem key={panne.id} value={panne.id}>
+                      {panne.name}{" "}
+                      {/* Utilisez panne.name au lieu de panne.code/description */}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {formik.touched.panneId && formik.errors.panneId && (

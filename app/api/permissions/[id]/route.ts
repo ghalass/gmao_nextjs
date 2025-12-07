@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const permission = await prisma.permission.findUnique({
-    where: { id: params.id },
+    where: { id: id },
   });
   if (!permission)
     return NextResponse.json(
@@ -17,21 +18,24 @@ export async function GET(
 }
 
 export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const data = await req.json();
+  const { id } = await context.params;
+  const data = await request.json();
   const permission = await prisma.permission.update({
-    where: { id: params.id },
+    where: { id: id },
     data,
   });
   return NextResponse.json(permission);
 }
 
 export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  await prisma.permission.delete({ where: { id: params.id } });
+  const { id } = await context.params;
+
+  await prisma.permission.delete({ where: { id: id } });
   return NextResponse.json({ message: "Permission deleted" });
 }

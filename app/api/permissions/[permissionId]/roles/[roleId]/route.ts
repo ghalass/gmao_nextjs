@@ -11,13 +11,13 @@ const the_resource = "permissions";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { permissionId: string; roleId: string } }
+  context: { params: Promise<{ permissionId: string; roleId: string }> }
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectCreateRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { permissionId, roleId } = await params;
+  const { permissionId, roleId } = await context.params;
 
   try {
     await assignPermissionToRole(roleId, permissionId);
@@ -44,13 +44,13 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { permissionId: string; roleId: string } }
+  context: { params: Promise<{ permissionId: string; roleId: string }> }
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectDeleteRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { permissionId, roleId } = await params;
+  const { permissionId, roleId } = await context.params;
 
   try {
     await removePermissionFromRole(roleId, permissionId);

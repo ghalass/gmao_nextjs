@@ -1,4 +1,4 @@
-// app/api/parcs/[id]/route.ts
+// app/api/parcs/[id]/route.ts - Version corrigée
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parcSchema } from "@/lib/validations/parcSchema";
@@ -45,7 +45,8 @@ export async function GET(request: NextRequest, context: Context) {
             name: "asc",
           },
         },
-        objectifs: {
+        objectif: {
+          // ← SINGULIER
           orderBy: {
             annee: "desc",
           },
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest, context: Context) {
         _count: {
           select: {
             engins: true,
-            objectifs: true,
+            objectif: true, // ← SINGULIER
             typesConsommationLub: true,
             typepanneParc: true,
             lubrifiantParc: true,
@@ -135,7 +136,8 @@ export async function PUT(request: NextRequest, context: Context) {
       where: { id },
       data: validatedData,
       include: {
-        Typeparc: {
+        typeparc: {
+          // ← SINGULIER, pas Typeparc
           select: {
             id: true,
             name: true,
@@ -237,7 +239,8 @@ export async function PATCH(request: NextRequest, context: Context) {
       where: { id },
       data: validatedData,
       include: {
-        Typeparc: {
+        typeparc: {
+          // ← SINGULIER, pas Typeparc
           select: {
             id: true,
             name: true,
@@ -291,7 +294,7 @@ export async function DELETE(request: NextRequest, context: Context) {
         _count: {
           select: {
             engins: true,
-            Objectifs: true,
+            objectif: true, // ← SINGULIER
             typesConsommationLub: true,
             typepanneParc: true,
             lubrifiantParc: true,
@@ -307,7 +310,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     // Vérifier s'il y a des relations qui empêchent la suppression
     const relationsCount =
       (existingParc._count.engins || 0) +
-      (existingParc._count.objectifs || 0) +
+      (existingParc._count.objectif || 0) + // ← SINGULIER
       (existingParc._count.typesConsommationLub || 0) +
       (existingParc._count.typepanneParc || 0) +
       (existingParc._count.lubrifiantParc || 0);
@@ -318,7 +321,7 @@ export async function DELETE(request: NextRequest, context: Context) {
           error: `Impossible de supprimer ce parc car il est lié à ${relationsCount} élément(s) (engins, objectifs, etc.)`,
           details: {
             engins: existingParc._count.engins,
-            objectifs: existingParc._count.objectifs,
+            objectif: existingParc._count.objectif, // ← SINGULIER
             typesConsommationLub: existingParc._count.typesConsommationLub,
             typepanneParc: existingParc._count.typepanneParc,
             lubrifiantParc: existingParc._count.lubrifiantParc,

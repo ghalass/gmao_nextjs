@@ -159,7 +159,7 @@ export default function TypepannesPage() {
     if (!typepannesQuery.data) return [];
 
     const typepannesData = typepannesQuery.data as unknown as Typepanne[];
-    let filtered = typepannesData.filter((typepanne: Typepanne) => {
+    const filtered = typepannesData.filter((typepanne: Typepanne) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
@@ -421,17 +421,17 @@ export default function TypepannesPage() {
             <span>Filtres actifs</span>
             {globalSearch && (
               <Badge variant="secondary" className="text-xs">
-                Recherche: "{globalSearch}"
+                Recherche: {globalSearch}
               </Badge>
             )}
             {columnFilters.name && (
               <Badge variant="secondary" className="text-xs">
-                Nom: "{columnFilters.name}"
+                Nom: {columnFilters.name}
               </Badge>
             )}
             {columnFilters.description && (
               <Badge variant="secondary" className="text-xs">
-                Description: "{columnFilters.description}"
+                Description: {columnFilters.description}
               </Badge>
             )}
           </div>

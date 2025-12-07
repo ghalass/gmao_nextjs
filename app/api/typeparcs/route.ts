@@ -1,7 +1,7 @@
 // app/api/typeparcs/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import * as yup from "yup";
+import yup from "@/lib/yupFr";
 
 // Schéma de validation Yup
 const typeparcSchema = yup.object().shape({

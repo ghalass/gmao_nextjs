@@ -165,7 +165,7 @@ export default function UsersPage() {
     if (!usersQuery.data) return [];
 
     const usersData = usersQuery.data as unknown as User[];
-    let filtered = usersData.filter((user: User) => {
+    const filtered = usersData.filter((user: User) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
@@ -199,8 +199,8 @@ export default function UsersPage() {
 
     // Tri
     filtered.sort((a: User, b: User) => {
-      let aValue: string | number | Date = "";
-      let bValue: string | number | Date = "";
+      let aValue: string | number;
+      let bValue: string | number;
 
       switch (sortField) {
         case "name":
@@ -211,10 +211,7 @@ export default function UsersPage() {
           aValue = a.email;
           bValue = b.email;
           break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
+
         case "roles":
           aValue = a.roles?.[0]?.role?.name || "";
           bValue = b.roles?.[0]?.role?.name || "";
@@ -228,10 +225,6 @@ export default function UsersPage() {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
       }
       return 0;
     });
@@ -264,12 +257,6 @@ export default function UsersPage() {
         Nom: user.name,
         Email: user.email,
         Rôles: user.roles?.map((role) => role.role?.name).join(", ") || "",
-        "Date de création": user.createdAt
-          ? new Date(user.createdAt).toLocaleDateString("fr-FR")
-          : "",
-        "Dernière modification": user.updatedAt
-          ? new Date(user.updatedAt).toLocaleDateString("fr-FR")
-          : "",
       }));
 
       // Convertir en CSV (format simple compatible avec Excel)
@@ -418,14 +405,14 @@ export default function UsersPage() {
             <span>Filtres actifs</span>
             {globalSearch && (
               <Badge variant="secondary" className="text-xs">
-                Recherche: "{globalSearch}"
+                Recherche: {globalSearch}
               </Badge>
             )}
             {Object.entries(columnFilters).map(
               ([key, value]) =>
                 value && (
                   <Badge key={key} variant="secondary" className="text-xs">
-                    {key}: "{value}"
+                    {key}: {value}
                   </Badge>
                 )
             )}
@@ -560,10 +547,6 @@ export default function UsersPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -606,9 +589,9 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
-                      {user.roles?.map((userRole) => (
+                      {user.roles?.map((userRole, index) => (
                         <Badge
-                          key={userRole.id}
+                          key={index}
                           variant="secondary"
                           className="text-xs"
                         >
@@ -617,9 +600,7 @@ export default function UsersPage() {
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

@@ -1,6 +1,6 @@
 // lib/validation/performanceSchema.ts
-import * as yup from "yup";
-import "@/lib/yupFr";
+
+import yup from "@/lib/yupFr";
 
 export const saisieLubrifiantSchema = yup.object({
   lubrifiantId: yup.string().required("Le lubrifiant est requis"),

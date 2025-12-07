@@ -21,7 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { Engin, parc, Site, typeparc } from "@/lib/types";
+import { Engin, Parc, Site, Typeparc } from "@/lib/types";
 import { useFormik } from "formik";
 import { enginSchema } from "@/lib/validations/enginSchema";
 
@@ -29,9 +29,9 @@ interface EnginModalProps {
   open: boolean;
   onClose: () => void;
   engin: Engin | null;
-  parcs: parc[];
+  parcs: Parc[];
   sites: Site[];
-  typeparcs: typeparc[];
+  typeparcs: Typeparc[];
   createEngin: any;
   updateEngin: any;
 }
@@ -48,19 +48,19 @@ export function EnginModal({
 }: EnginModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedtypeparcId, setSelectedtypeparcId] = useState<string>(
-    engin?.parc.typeparc.id || ""
+    engin?.parc?.typeparc?.id || ""
   );
 
   // Filtrer les parcs par type de parc sélectionné
   const filteredparcs = useMemo(() => {
     if (!selectedtypeparcId) return parcs;
-    return parcs.filter((parc) => parc.typeparc.id === selectedtypeparcId);
+    return parcs.filter((parc) => parc?.typeparc?.id === selectedtypeparcId);
   }, [parcs, selectedtypeparcId]);
 
   const formik = useFormik({
     initialValues: {
       name: engin?.name || "",
-      typeparcId: engin?.parc.typeparc.id || "",
+      typeparcId: engin?.parc?.typeparc?.id || "",
       parcId: engin?.parcId || "",
       siteId: engin?.siteId || "",
       active: engin?.active ?? true,
@@ -100,7 +100,7 @@ export function EnginModal({
     if (open) {
       formik.resetForm();
       setError(null);
-      setSelectedtypeparcId(engin?.parc.typeparc.id || "");
+      setSelectedtypeparcId(engin?.parc?.typeparc?.id || "");
     }
   }, [open, engin]);
 
@@ -129,7 +129,7 @@ export function EnginModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Nom de l'engin</Label>
+            <Label htmlFor="name">{"Nom de l'engin"}</Label>
             <Input
               id="name"
               name="name"

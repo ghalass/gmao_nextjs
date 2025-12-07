@@ -39,6 +39,7 @@ import {
 import { PermissionModal } from "@/components/permissions/PermissionModal";
 import { DeleteConfirmationModal } from "@/components/permissions/DeleteConfirmationModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "resource" | "action" | "createdAt" | "description";
 type SortDirection = "asc" | "desc";
@@ -219,7 +220,7 @@ export default function PermissionsPage() {
   const filteredAndSortedPermissions = useMemo((): Permission[] => {
     if (!permissionsQuery.data) return [];
 
-    let filtered = permissionsQuery.data.filter((permission: Permission) => {
+    const filtered = permissionsQuery.data.filter((permission: Permission) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
@@ -342,48 +343,7 @@ export default function PermissionsPage() {
   // 🆕 Fonction d'export Excel
   const handleExportToExcel = (): void => {
     try {
-      // Préparer les données pour l'export
-      const exportData = filteredAndSortedPermissions.map(
-        (permission: Permission) => ({
-          Nom: permission.name,
-          Ressource: permission.resource?.name || "N/A",
-          Action: getActionLabel(permission.action),
-          Description: permission.description || "",
-          "Date de création": permission.createdAt
-            ? new Date(permission.createdAt).toLocaleDateString("fr-FR")
-            : "",
-          "Dernière modification": permission.updatedAt
-            ? new Date(permission.updatedAt).toLocaleDateString("fr-FR")
-            : "",
-        })
-      );
-
-      // Convertir en CSV
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      // Créer et télécharger le fichier
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `permissions_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      exportExcel("my-table-id", "pannes");
     } catch (error) {
       console.error("Erreur lors de l'export Excel:", error);
       setError("Erreur lors de l'export des données");

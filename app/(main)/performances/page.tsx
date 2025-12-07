@@ -50,6 +50,7 @@ import { Engin, Site } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "du" | "engin" | "site" | "hrm" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -288,37 +289,7 @@ export default function PerformancesPage() {
   // Fonction d'export Excel
   const handleExportToExcel = (): void => {
     try {
-      const exportData = filteredAndSortedPerformances.map(
-        (performance: SaisiePerformance) => ({
-          Date: format(new Date(performance.du), "dd/MM/yyyy"),
-          Engin: performance.engin.name,
-          Site: performance.site.name,
-          HRM: performance.hrm,
-          "Nombre de HIM": performance.saisiehim?.length || 0,
-          "Date de création": format(
-            new Date(performance.createdAt),
-            "dd/MM/yyyy HH:mm"
-          ),
-          "Dernière modification": format(
-            new Date(performance.updatedAt),
-            "dd/MM/yyyy HH:mm"
-          ),
-        })
-      );
-
-      if (exportData.length === 0) {
-        setError("Aucune donnée à exporter");
-        return;
-      }
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Performances");
-
-      XLSX.writeFile(
-        workbook,
-        `performances_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
+      exportExcel("my-table-id", "performances");
     } catch (error) {
       console.error("Erreur lors de l'export Excel:", error);
       setError("Erreur lors de l'export des données");

@@ -21,8 +21,9 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useFormik } from "formik";
-import * as yup from "yup";
+
 import { Panne, Typepanne } from "@/lib/types";
+import yup from "@/lib/yupFr";
 
 // Schéma de validation
 const validationSchema = yup.object({

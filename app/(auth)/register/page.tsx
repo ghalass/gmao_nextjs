@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import ModeToggle from "@/components/ModeToggle";
-import Yup from "@/lib/yupFr";
+import yup from "@/lib/yupFr";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -27,11 +27,11 @@ import Link from "next/link";
 export default function RegisterPage() {
   const { register } = useAuth();
 
-  const nameSchema = Yup.string().min(3).required().label("Nom complet");
-  const emailSchema = Yup.string().email().required().label("Adresse Email");
-  const passwordSchema = Yup.string().min(6).required().label("Mot de passe");
+  const nameSchema = yup.string().min(3).required().label("Nom complet");
+  const emailSchema = yup.string().email().required().label("Adresse Email");
+  const passwordSchema = yup.string().min(6).required().label("Mot de passe");
 
-  const validationSchema = Yup.object({
+  const validationSchema = yup.object({
     name: nameSchema,
     email: emailSchema,
     password: passwordSchema,
@@ -93,7 +93,7 @@ export default function RegisterPage() {
                       nameSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError)
+                      if (err instanceof yup.ValidationError)
                         return err.message;
                       return "Erreur de validation";
                     }
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                       emailSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError)
+                      if (err instanceof yup.ValidationError)
                         return err.message;
                       return "Erreur de validation";
                     }
@@ -185,7 +185,7 @@ export default function RegisterPage() {
                       passwordSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError)
+                      if (err instanceof yup.ValidationError)
                         return err.message;
                       return "Erreur de validation";
                     }

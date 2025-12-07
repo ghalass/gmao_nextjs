@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type");
     const dateDebut = searchParams.get("dateDebut");
     const dateFin = searchParams.get("dateFin");
     const engin = searchParams.get("engin");
@@ -92,7 +91,6 @@ export async function GET(request: NextRequest) {
           },
         },
         typeconsommationlub: true,
-        origineSaisie: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -120,14 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      lubrifiantId,
-      qte,
-      saisiehimId,
-      typeconsommationlubId,
-      origineSaisieId,
-      obs,
-    } = body;
+    const { lubrifiantId, qte, saisiehimId, typeconsommationlubId, obs } = body;
 
     // Validation des données requises
     if (!lubrifiantId || !qte || !saisiehimId) {
@@ -146,7 +137,6 @@ export async function POST(request: NextRequest) {
         qte: parseFloat(qte),
         saisiehimId,
         typeconsommationlubId: typeconsommationlubId || null,
-        origineSaisieId: origineSaisieId || null,
         obs: obs || null,
       },
       include: {
@@ -180,7 +170,6 @@ export async function POST(request: NextRequest) {
           },
         },
         typeconsommationlub: true,
-        origineSaisie: true,
       },
     });
 

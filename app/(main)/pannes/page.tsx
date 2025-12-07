@@ -16,13 +16,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Loader2,
   Plus,
   Pencil,
@@ -31,17 +24,17 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
-  Filter,
   X,
   Download,
   AlertTriangle,
 } from "lucide-react";
 import { PanneModal } from "@/components/pannes/PanneModal";
 import { DeletePanneModal } from "@/components/pannes/DeletePanneModal";
-import { Panne, Typepanne } from "@/lib/types";
+import { Panne } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { exportExcel } from "@/lib/xlsxFn";
 
-type SortField = "name" | "typepanne" | "createdAt";
+type SortField = "name" | "typepanne";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -51,7 +44,8 @@ interface ColumnFilters {
 
 export default function PannesPage() {
   const { pannesQuery, createPanne, updatePanne, deletePanne } = usePannes();
-  const { data: typesPanne } = useTypepannes();
+  const { typepannesQuery } = useTypepannes();
+  const typesPanne = typepannesQuery.data;
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -63,7 +57,7 @@ export default function PannesPage() {
     name: "",
     typepanne: "",
   });
-  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
@@ -159,7 +153,7 @@ export default function PannesPage() {
   const filteredAndSortedPannes = useMemo((): Panne[] => {
     if (!pannesQuery.data) return [];
 
-    let filtered = pannesQuery.data.filter((panne: Panne) => {
+    const filtered = pannesQuery.data.filter((panne: Panne) => {
       const globalMatch =
         globalSearch === "" ||
         panne.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
@@ -193,23 +187,22 @@ export default function PannesPage() {
           aValue = a.typepanne?.name || "";
           bValue = b.typepanne?.name || "";
           break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
-        default:
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
       }
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
+      } else if (
+        aValue &&
+        bValue &&
+        !isNaN(new Date(aValue).getTime()) &&
+        !isNaN(new Date(bValue).getTime())
+      ) {
+        // Utilisez Date.parse pour convertir les strings en timestamps
+        const aTime = new Date(aValue).getTime();
+        const bTime = new Date(bValue).getTime();
+        return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
       }
       return 0;
     });
@@ -233,39 +226,7 @@ export default function PannesPage() {
 
   const handleExportToExcel = (): void => {
     try {
-      const exportData = filteredAndSortedPannes.map((panne: Panne) => ({
-        Nom: panne.name,
-        Type: panne.typepanne?.name || "N/A",
-        Description: panne.typepanne?.description || "N/A",
-        "Nombre d'engins": getNombreEngins(panne),
-        "Nombre de saisies": panne.saisiehim?.length || 0,
-        "Date création": new Date(panne.createdAt).toLocaleDateString("fr-FR"),
-      }));
-
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `pannes_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      exportExcel("my-table-id", "pannes");
     } catch (error) {
       console.error("Erreur lors de l'export Excel:", error);
       setError("Erreur lors de l'export des données");
@@ -418,9 +379,6 @@ export default function PannesPage() {
 
               <TableHead className="font-medium">Description</TableHead>
               <TableHead className="font-medium">Engins associés</TableHead>
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date création</span>
-              </SortableHeader>
               <TableHead className="text-right font-medium">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -475,9 +433,7 @@ export default function PannesPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(panne.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

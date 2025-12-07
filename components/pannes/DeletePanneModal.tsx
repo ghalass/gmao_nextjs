@@ -82,9 +82,6 @@ export function DeletePanneModal({
             <div className="text-sm text-muted-foreground">
               Nombre de saisies HIM: {nombreSaisies}
             </div>
-            <div className="text-sm text-muted-foreground">
-              Créée le: {new Date(panne.createdAt).toLocaleDateString("fr-FR")}
-            </div>
 
             {nombreSaisies > 0 && (
               <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">

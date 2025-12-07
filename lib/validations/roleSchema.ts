@@ -1,24 +1,28 @@
 // lib/validations/roleSchema.ts
-import Yup from "@/lib/yupFr";
+import yup from "@/lib/yupFr";
 
-export const roleCreateSchema = Yup.object().shape({
-  name: Yup.string()
+export const roleCreateSchema = yup.object().shape({
+  name: yup
+    .string()
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .required("Le nom est requis"),
-  description: Yup.string().notRequired(),
-  permissions: Yup.array()
-    .of(Yup.string())
+  description: yup.string().notRequired(),
+  permissions: yup
+    .array()
+    .of(yup.string())
     .min(1, "Au moins une permission doit être sélectionnée")
     .required("Les permissions sont requises"),
 });
 
-export const roleUpdateSchema = Yup.object().shape({
-  name: Yup.string()
+export const roleUpdateSchema = yup.object().shape({
+  name: yup
+    .string()
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .required("Le nom est requis"),
-  description: Yup.string().notRequired(),
-  permissions: Yup.array()
-    .of(Yup.string())
+  description: yup.string().notRequired(),
+  permissions: yup
+    .array()
+    .of(yup.string())
     .min(1, "Au moins une permission doit être sélectionnée")
     .required("Les permissions sont requises"),
 });

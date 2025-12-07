@@ -8,20 +8,18 @@ import {
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
 
-function getIdFromUrl(url: string): string {
-  const pathSegments = new URL(url).pathname.split("/");
-  return pathSegments[pathSegments.length - 1];
-}
-
 const resource = "role";
 
 // GET - Récupérer un rôle spécifique
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectReadRoute(request, resource);
     if (protectionError) return protectionError;
 
-    const id = getIdFromUrl(request.url);
+    const { id } = await context.params;
     if (!id || id === "roles") {
       return NextResponse.json(
         { message: "ID du rôle requis" },
@@ -55,12 +53,15 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT - Modifier un rôle
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectUpdateRoute(request, resource);
     if (protectionError) return protectionError;
 
-    const id = getIdFromUrl(request.url);
+    const { id } = await context.params;
 
     if (!id || id === "roles") {
       return NextResponse.json(
@@ -144,12 +145,15 @@ export async function PUT(request: NextRequest) {
 }
 
 // DELETE - Supprimer un rôle
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const protectionError = await protectDeleteRoute(request, resource);
     if (protectionError) return protectionError;
 
-    const id = getIdFromUrl(request.url);
+    const { id } = await context.params;
 
     if (!id || id === "roles") {
       return NextResponse.json(

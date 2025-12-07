@@ -1,14 +1,11 @@
 // app/roles/create/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormik } from "formik";
 import yup from "@/lib/yupFr";
-import {
-  usePermissions,
-  type PermissionWithResource,
-} from "@/hooks/usePermissions";
+import { usePermissions, type Permission } from "@/hooks/usePermissions";
 import { useRoles } from "@/hooks/useRoles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,12 +31,14 @@ interface RoleFormValues {
   permissions: string[];
 }
 
-const roleSchema = Yup.object({
-  name: Yup.string()
+const roleSchema = yup.object({
+  name: yup
+    .string()
     .required("Le nom du rôle est requis")
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .max(50, "Le nom ne peut pas dépasser 50 caractères"),
-  description: Yup.string()
+  description: yup
+    .string()
     .max(255, "La description ne peut pas dépasser 255 caractères")
     .nullable(),
 });
@@ -88,15 +87,13 @@ export default function CreateRolePage() {
   });
 
   // CORRECTION : Vérifier explicitement que data est un tableau
-  const permissionsData: PermissionWithResource[] = Array.isArray(
-    permissionsQuery.data
-  )
+  const permissionsData: Permission[] = Array.isArray(permissionsQuery.data)
     ? permissionsQuery.data
     : [];
 
   // CORRECTION : Utiliser resource.name au lieu de resource directement
   const filteredPermissions = permissionsData.filter(
-    (permission: PermissionWithResource) => {
+    (permission: Permission) => {
       const searchLower = searchTerm.toLowerCase();
       const resourceName = permission.resource?.name || "Autres";
       return (
@@ -117,7 +114,7 @@ export default function CreateRolePage() {
     }
     acc[resourceName].push(permission);
     return acc;
-  }, {} as Record<string, PermissionWithResource[]>);
+  }, {} as Record<string, Permission[]>);
 
   const handlePermissionChange = (permissionId: string, checked: boolean) => {
     const currentPermissions = formik.values.permissions;
@@ -417,7 +414,10 @@ export default function CreateRolePage() {
                   <div className="overflow-y-auto space-y-6">
                     {Object.keys(groupedPermissions).length > 0 ? (
                       Object.entries(groupedPermissions).map(
-                        ([resourceName, resourcePermissions]) => {
+                        ([resourceName, resourcePermissions]: [
+                          string,
+                          Permission[]
+                        ]) => {
                           const resourcePermissionIds = resourcePermissions.map(
                             (p) => p.id
                           );

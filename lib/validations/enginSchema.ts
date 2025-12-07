@@ -1,6 +1,6 @@
 // lib/validations/enginSchema.ts
 
-import yup from "../yupFr";
+import yup from "@/lib/yupFr";
 
 export const enginSchema = yup.object({
   name: yup

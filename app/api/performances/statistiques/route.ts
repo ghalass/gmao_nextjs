@@ -1,8 +1,6 @@
 // app/api/performances/statistiques/route.ts
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +33,7 @@ export async function GET(request: NextRequest) {
                 typepanne: true,
               },
             },
-            saisielubrifiants: {
+            saisielubrifiant: {
               include: {
                 lubrifiant: true,
               },
@@ -65,7 +63,7 @@ export async function GET(request: NextRequest) {
         (sum, perf) =>
           sum +
           perf.saisiehim.reduce(
-            (lubSum, him) => lubSum + him.saisielubrifiants.length,
+            (lubSum, him) => lubSum + him.saisielubrifiant.length,
             0
           ),
         0
@@ -96,7 +94,7 @@ export async function GET(request: NextRequest) {
       statistiques.parEngin[enginName].totalPannes += perf.saisiehim.length;
       statistiques.parEngin[enginName].totalLubrifiants +=
         perf.saisiehim.reduce(
-          (sum, him) => sum + him.saisielubrifiants.length,
+          (sum, him) => sum + him.saisielubrifiant.length,
           0
         );
     });
@@ -121,7 +119,7 @@ export async function GET(request: NextRequest) {
       );
       statistiques.parSite[siteName].totalPannes += perf.saisiehim.length;
       statistiques.parSite[siteName].totalLubrifiants += perf.saisiehim.reduce(
-        (sum, him) => sum + him.saisielubrifiants.length,
+        (sum, him) => sum + him.saisielubrifiant.length,
         0
       );
     });
@@ -148,7 +146,7 @@ export async function GET(request: NextRequest) {
       );
       statistiques.parMois[mois].totalPannes += perf.saisiehim.length;
       statistiques.parMois[mois].totalLubrifiants += perf.saisiehim.reduce(
-        (sum, him) => sum + him.saisielubrifiants.length,
+        (sum, him) => sum + him.saisielubrifiant.length,
         0
       );
     });

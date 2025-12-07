@@ -1,18 +1,13 @@
-// app/api/performances/[id]/route.ts
+// app/api/performances/[id]/route.ts - Version corrigée
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
-
-interface Params {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const performance = await prisma.saisiehrm.findUnique({
       where: { id },
@@ -31,11 +26,13 @@ export async function GET(request: NextRequest, { params }: Params) {
           include: {
             panne: {
               include: {
-                engin: true,
-                typepanne: true,
+                typepanne: true, // ← CORRECTION: seulement typepanne
               },
             },
-            saisielubrifiants: {
+            // Vous pouvez aussi inclure l'engin via saisiehim si nécessaire
+            engin: true,
+            saisielubrifiant: {
+              // ← CORRECTION: singulier comme dans votre schéma
               include: {
                 lubrifiant: {
                   include: {
@@ -67,9 +64,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     const { du, enginId, siteId, hrm, saisiehims } = body;
 
@@ -79,7 +79,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       include: {
         saisiehim: {
           include: {
-            saisielubrifiants: true,
+            saisielubrifiant: true, // ← CORRECTION: singulier
           },
         },
       },
@@ -151,7 +151,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
               obs: him.obs,
               saisiehrmId: id,
               enginId: enginId,
-              saisielubrifiants: {
+              saisielubrifiant: {
+                // ← CORRECTION: singulier
                 create:
                   him.saisielubrifiants?.map((lub: any) => ({
                     lubrifiantId: lub.lubrifiantId,
@@ -183,11 +184,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
             include: {
               panne: {
                 include: {
-                  engin: true,
-                  typepanne: true,
+                  typepanne: true, // ← CORRECTION: seulement typepanne
                 },
               },
-              saisielubrifiants: {
+              // Vous pouvez aussi inclure l'engin via saisiehim si nécessaire
+              engin: true,
+              saisielubrifiant: {
+                // ← CORRECTION: singulier
                 include: {
                   lubrifiant: {
                     include: {
@@ -213,17 +216,19 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
-
+    const { id } = await context.params;
     // Vérifier si la performance existe
     const existingPerformance = await prisma.saisiehrm.findUnique({
       where: { id },
       include: {
         saisiehim: {
           include: {
-            saisielubrifiants: true,
+            saisielubrifiant: true, // ← CORRECTION: singulier
           },
         },
       },

@@ -1,26 +1,31 @@
 // lib/validations/userSchema.ts
-import Yup from "@/lib/yupFr";
+import yup from "@/lib/yupFr";
 
-export const userCreateSchema = Yup.object().shape({
-  email: Yup.string().email("Email invalide").required("L'email est requis"),
-  name: Yup.string()
+export const userCreateSchema = yup.object().shape({
+  email: yup.string().email("Email invalide").required("L'email est requis"),
+  name: yup
+    .string()
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .required("Le nom est requis"),
-  password: Yup.string()
+  password: yup
+    .string()
     .min(6, "Le mot de passe doit contenir au moins 6 caractères")
     .required("Le mot de passe est requis"),
-  role: Yup.array()
-    .of(Yup.string())
+  role: yup
+    .array()
+    .of(yup.string())
     .min(1, "Au moins un rôle doit être sélectionné")
     .required("Le rôle est requis"),
 });
 
-export const userUpdateSchema = Yup.object().shape({
-  email: Yup.string().email("Email invalide").required("L'email est requis"),
-  name: Yup.string()
+export const userUpdateSchema = yup.object().shape({
+  email: yup.string().email("Email invalide").required("L'email est requis"),
+  name: yup
+    .string()
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .required("Le nom est requis"),
-  password: Yup.string()
+  password: yup
+    .string()
     .test(
       "password-length",
       "Le mot de passe doit contenir au moins 6 caractères",
@@ -32,8 +37,9 @@ export const userUpdateSchema = Yup.object().shape({
       }
     )
     .notRequired(),
-  role: Yup.array()
-    .of(Yup.string())
+  role: yup
+    .array()
+    .of(yup.string())
     .min(1, "Au moins un rôle doit être sélectionné")
     .required("Le rôle est requis"),
 });

@@ -1,8 +1,6 @@
-// app/api/performances/route.ts
+// app/api/performances/route.ts - Version corrigée
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,11 +37,11 @@ export async function GET(request: NextRequest) {
           include: {
             panne: {
               include: {
-                engin: true,
-                typepanne: true,
+                typepanne: true, // ← CORRECTION: seulement typepanne
               },
             },
-            saisielubrifiants: {
+            saisielubrifiant: {
+              // ← CORRECTION: singulier
               include: {
                 lubrifiant: {
                   include: {
@@ -105,8 +103,9 @@ export async function POST(request: NextRequest) {
               him: parseFloat(him.him),
               ni: parseInt(him.ni),
               obs: him.obs,
-              enginId: enginId, // Optionnel, mais utile pour les requêtes
-              saisielubrifiants: {
+              enginId: enginId,
+              saisielubrifiant: {
+                // ← CORRECTION: singulier
                 create:
                   him.saisielubrifiants?.map((lub: any) => ({
                     lubrifiantId: lub.lubrifiantId,
@@ -133,11 +132,11 @@ export async function POST(request: NextRequest) {
           include: {
             panne: {
               include: {
-                engin: true,
-                typepanne: true,
+                typepanne: true, // ← CORRECTION: seulement typepanne
               },
             },
-            saisielubrifiants: {
+            saisielubrifiant: {
+              // ← CORRECTION: singulier
               include: {
                 lubrifiant: {
                   include: {

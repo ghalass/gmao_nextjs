@@ -192,7 +192,7 @@ export default function SitesPage() {
   const filteredAndSortedSites = useMemo((): Site[] => {
     if (!sitesQuery.data) return [];
 
-    let filtered = sitesQuery.data.filter((site: Site) => {
+    const filtered = sitesQuery.data.filter((site: Site) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||

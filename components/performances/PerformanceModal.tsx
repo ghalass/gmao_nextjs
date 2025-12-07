@@ -324,16 +324,11 @@ export function PerformanceModal({
                         <SelectValue placeholder="Sélectionner une panne" />
                       </SelectTrigger>
                       <SelectContent>
-                        {pannes
-                          .filter(
-                            (panne) => panne.engin.id === formik.values.enginId
-                          )
-                          .map((panne) => (
-                            <SelectItem key={panne.id} value={panne.id}>
-                              {panne.code ? `${panne.code} - ` : ""}
-                              {panne.description}
-                            </SelectItem>
-                          ))}
+                        {pannes.map((panne) => (
+                          <SelectItem key={panne.id} value={panne.id}>
+                            {panne.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -2,7 +2,7 @@
 "use client";
 
 import { API } from "@/lib/constantes";
-import { Role, roleCreateDto } from "@/lib/types";
+import { Role, RoleCreateDto } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ export function useRoles() {
   });
 
   // 🔹 CREATE ROLE
-  const createRole = useMutation<Role, Error, roleCreateDto>({
+  const createRole = useMutation<Role, Error, RoleCreateDto>({
     mutationFn: async (roleData): Promise<Role> => {
       try {
         // Validation des données avant envoi

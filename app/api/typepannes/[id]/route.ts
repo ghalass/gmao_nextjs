@@ -2,16 +2,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-interface Params {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     // Attendre les params
-    const { id } = await params;
+    const { id } = await context.params;
 
     const typepanne = await prisma.typepanne.findUnique({
       where: { id },
@@ -42,10 +39,13 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     // Attendre les params en premier
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await request.json();
     const { name, description } = body;
 
@@ -109,10 +109,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     // Attendre les params
-    const { id } = await params;
+    const { id } = await context.params;
 
     // Vérifier si le type de panne existe
     const existingTypepanne = await prisma.typepanne.findUnique({

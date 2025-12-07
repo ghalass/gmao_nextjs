@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -13,9 +13,9 @@ export async function PUT(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
-    const { du, enginId, siteId, hrm, origineSaisieId } = body;
+    const { du, enginId, siteId, hrm } = body;
 
     // Vérifier si une autre saisie existe déjà pour cette date et cet engin
     const existingSaisie = await prisma.saisiehrm.findFirst({
@@ -69,7 +69,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -77,7 +77,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await context.params;
 
     // Vérifier s'il existe des saisies HIM liées
     const relatedHim = await prisma.saisiehim.findFirst({

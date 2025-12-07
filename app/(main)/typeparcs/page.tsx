@@ -154,7 +154,7 @@ export default function TypeparcsPage() {
     if (!typeparcsQuery.data) return [];
 
     const typeparcsData = typeparcsQuery.data as unknown as Typeparc[];
-    let filtered = typeparcsData.filter((typeparc: Typeparc) => {
+    const filtered = typeparcsData.filter((typeparc: Typeparc) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
@@ -170,17 +170,13 @@ export default function TypeparcsPage() {
 
     // Tri
     filtered.sort((a: Typeparc, b: Typeparc) => {
-      let aValue: string | number | Date = "";
-      let bValue: string | number | Date = "";
+      let aValue: string | number;
+      let bValue: string | number;
 
       switch (sortField) {
         case "name":
           aValue = a.name;
           bValue = b.name;
-          break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
           break;
         default:
           aValue = a.name;
@@ -191,10 +187,6 @@ export default function TypeparcsPage() {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
       }
       return 0;
     });
@@ -233,12 +225,6 @@ export default function TypeparcsPage() {
         (typeparc: Typeparc) => ({
           Nom: typeparc.name,
           "Nombre de parcs": typeparc.parcs?.length || 0,
-          "Date de création": typeparc.createdAt
-            ? new Date(typeparc.createdAt).toLocaleDateString("fr-FR")
-            : "",
-          "Dernière modification": typeparc.updatedAt
-            ? new Date(typeparc.updatedAt).toLocaleDateString("fr-FR")
-            : "",
         })
       );
 
@@ -330,7 +316,7 @@ export default function TypeparcsPage() {
             Gestion des types de parc
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gérez les différents types de parcs d'engins miniers
+            {"Gérez les différents types de parcs d'engins miniers"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -392,12 +378,12 @@ export default function TypeparcsPage() {
             <span>Filtres actifs</span>
             {globalSearch && (
               <Badge variant="secondary" className="text-xs">
-                Recherche: "{globalSearch}"
+                Recherche: {globalSearch}
               </Badge>
             )}
             {columnFilters.name && (
               <Badge variant="secondary" className="text-xs">
-                Nom: "{columnFilters.name}"
+                Nom: {columnFilters.name}
               </Badge>
             )}
           </div>
@@ -479,10 +465,6 @@ export default function TypeparcsPage() {
 
               <TableHead className="font-medium">Nombre de parcs</TableHead>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -525,9 +507,7 @@ export default function TypeparcsPage() {
                       {typeparc.parcs?.length || 0} parc(s)
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(typeparc.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

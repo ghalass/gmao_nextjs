@@ -1,4 +1,4 @@
-// hooks/useTypepannes.ts
+// hooks/useTypepannes.ts - VERSION CORRIGÉE
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface Typepanne {
@@ -21,6 +21,7 @@ export interface TypepanneFormData {
 export function useTypepannes() {
   const queryClient = useQueryClient();
 
+  // Renommez pour retourner directement la query
   const typepannesQuery = useQuery({
     queryKey: ["typepannes"],
     queryFn: async (): Promise<Typepanne[]> => {

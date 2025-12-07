@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useFormik } from "formik";
-import * as Yup from "yup";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,14 +22,14 @@ import { Typepanne, TypepanneFormData } from "@/hooks/useTypepannes";
 import yup from "@/lib/yupFr";
 
 const validationSchema = yup.object({
-  name: Yup.string()
+  name: yup
+    .string()
     .required("Le nom est obligatoire")
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .max(50, "Le nom ne peut pas dépasser 50 caractères"),
-  description: Yup.string().max(
-    500,
-    "La description ne peut pas dépasser 500 caractères"
-  ),
+  description: yup
+    .string()
+    .max(500, "La description ne peut pas dépasser 500 caractères"),
 });
 
 interface TypepanneModalProps {

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import ModeToggle from "@/components/ModeToggle";
-import Yup from "@/lib/yupFr";
+import yup from "@/lib/yupFr";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -27,11 +27,11 @@ import Link from "next/link";
 export default function LoginPage() {
   const { login } = useAuth();
   // ✅ Schémas de validation individuels pour chaque champ
-  const emailSchema = Yup.string().email().required().label("Adresse Email");
-  const passwordSchema = Yup.string().min(6).required().label("Mot de passe");
+  const emailSchema = yup.string().email().required().label("Adresse Email");
+  const passwordSchema = yup.string().min(6).required().label("Mot de passe");
 
   // ✅ Schéma global pour la soumission
-  const validationSchema = Yup.object({
+  const validationSchema = yup.object({
     email: emailSchema,
     password: passwordSchema,
   });
@@ -92,7 +92,7 @@ export default function LoginPage() {
                       emailSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError) {
+                      if (err instanceof yup.ValidationError) {
                         return err.message;
                       }
                       return "Erreur de validation";
@@ -103,7 +103,7 @@ export default function LoginPage() {
                       emailSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError) {
+                      if (err instanceof yup.ValidationError) {
                         return err.message;
                       }
                       return "Erreur de validation";
@@ -151,7 +151,7 @@ export default function LoginPage() {
                       passwordSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError) {
+                      if (err instanceof yup.ValidationError) {
                         return err.message;
                       }
                       return "Erreur de validation";
@@ -162,7 +162,7 @@ export default function LoginPage() {
                       passwordSchema.validateSync(value);
                       return undefined;
                     } catch (err) {
-                      if (err instanceof Yup.ValidationError) {
+                      if (err instanceof yup.ValidationError) {
                         return err.message;
                       }
                       return "Erreur de validation";

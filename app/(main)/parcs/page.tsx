@@ -40,6 +40,7 @@ import { DeleteParcModal } from "@/components/parcs/DeleteParcModal";
 import { Parc } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "typeparc" | "enginsCount" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -156,7 +157,7 @@ export default function ParcsPage() {
       const globalMatch =
         globalSearch === "" ||
         parc.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        parc.typeparc.name.toLowerCase().includes(globalSearch.toLowerCase());
+        parc?.typeparc?.name.toLowerCase().includes(globalSearch.toLowerCase());
 
       const nameMatch =
         columnFilters.name === "" ||
@@ -164,7 +165,7 @@ export default function ParcsPage() {
 
       const typeparcMatch =
         columnFilters.typeparc === "" ||
-        parc.typeparc.name
+        parc?.typeparc?.name
           .toLowerCase()
           .includes(columnFilters.typeparc.toLowerCase());
 
@@ -181,16 +182,12 @@ export default function ParcsPage() {
           bValue = b.name;
           break;
         case "typeparc":
-          aValue = a.typeparc.name;
-          bValue = b.typeparc.name;
+          aValue = a.typeparc?.name || "";
+          bValue = b.typeparc?.name || "";
           break;
         case "enginsCount":
           aValue = a._count?.engins || 0;
           bValue = b._count?.engins || 0;
-          break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
           break;
         default:
           aValue = a.name;
@@ -203,10 +200,20 @@ export default function ParcsPage() {
           : bValue.localeCompare(aValue);
       } else if (typeof aValue === "number" && typeof bValue === "number") {
         return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
+      } else if (
+        aValue &&
+        bValue &&
+        typeof aValue === "string" &&
+        typeof bValue === "string"
+      ) {
+        // Pour le tri par date, essayez de convertir en timestamps
+        try {
+          const aTime = new Date(aValue).getTime();
+          const bTime = new Date(bValue).getTime();
+          return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
+        } catch {
+          return 0;
+        }
       }
       return 0;
     });
@@ -231,26 +238,7 @@ export default function ParcsPage() {
 
   const handleExportToExcel = (): void => {
     try {
-      const exportData = filteredAndSortedParcs.map((parc: Parc) => ({
-        Nom: parc.name,
-        "Type de parc": parc.typeparc.name,
-        "Nombre d'engins": parc._count?.engins || 0,
-        "Date de création": new Date(parc.createdAt).toLocaleDateString(
-          "fr-FR"
-        ),
-        "Dernière modification": new Date(parc.updatedAt).toLocaleDateString(
-          "fr-FR"
-        ),
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Parcs");
-
-      XLSX.writeFile(
-        workbook,
-        `parcs_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
+      exportExcel("my-table-id", "parcs");
     } catch (error) {
       console.error("Erreur lors de l'export Excel:", error);
       setError("Erreur lors de l'export des données");
@@ -483,11 +471,6 @@ export default function ParcsPage() {
               <SortableHeader field="enginsCount">
                 <span className="font-medium">Nombre d'engins</span>
               </SortableHeader>
-
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -526,16 +509,14 @@ export default function ParcsPage() {
                 <TableRow key={parc.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">{parc.name}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{parc?.Typeparc?.name}</Badge>
+                    <Badge variant="secondary">{parc?.typeparc?.name}</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
                       {parc._count?.engins || 0} engin(s)
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(parc.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

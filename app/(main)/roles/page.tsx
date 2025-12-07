@@ -40,7 +40,7 @@ import { Role } from "@/lib/types";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type SortField = "name" | "description" | "createdAt" | "permissions";
+type SortField = "name" | "description" | "permissions";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -144,13 +144,11 @@ export default function RolesPage() {
   const filteredAndSortedRoles = useMemo((): Role[] => {
     if (!rolesQuery.data) return [];
 
-    let filtered = rolesQuery.data.filter((role: Role) => {
+    const filtered = rolesQuery.data.filter((role: Role) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
         role.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        (role.description?.toLowerCase().includes(globalSearch.toLowerCase()) ??
-          false) ||
         Boolean(
           role.permissions?.some((rolePermission) =>
             rolePermission.permission?.name
@@ -188,8 +186,8 @@ export default function RolesPage() {
 
     // Tri
     filtered.sort((a: Role, b: Role) => {
-      let aValue: string | number | Date = "";
-      let bValue: string | number | Date = "";
+      let aValue: string | number = "";
+      let bValue: string | number = "";
 
       switch (sortField) {
         case "name":
@@ -199,10 +197,6 @@ export default function RolesPage() {
         case "description":
           aValue = a.description || "";
           bValue = b.description || "";
-          break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
           break;
         case "permissions":
           aValue = a.permissions?.[0]?.permission?.name || "";
@@ -217,10 +211,8 @@ export default function RolesPage() {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
+      } else if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
       }
       return 0;
     });
@@ -255,12 +247,6 @@ export default function RolesPage() {
         Permissions:
           role.permissions?.map((rp) => rp.permission?.name).join(", ") || "",
         "Nombre de permissions": role.permissions?.length || 0,
-        "Date de création": role.createdAt
-          ? new Date(role.createdAt).toLocaleDateString("fr-FR")
-          : "",
-        "Dernière modification": role.updatedAt
-          ? new Date(role.updatedAt).toLocaleDateString("fr-FR")
-          : "",
       }));
 
       // Convertir en CSV (format simple compatible avec Excel)
@@ -411,14 +397,14 @@ export default function RolesPage() {
             <span>Filtres actifs</span>
             {globalSearch && (
               <Badge variant="secondary" className="text-xs">
-                Recherche: "{globalSearch}"
+                Recherche: {globalSearch}
               </Badge>
             )}
             {Object.entries(columnFilters).map(
               ([key, value]) =>
                 value && (
                   <Badge key={key} variant="secondary" className="text-xs">
-                    {key}: "{value}"
+                    {key}: {value}
                   </Badge>
                 )
             )}
@@ -550,10 +536,6 @@ export default function RolesPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -607,7 +589,10 @@ export default function RolesPage() {
                     <div className="flex gap-1 flex-wrap">
                       {role.permissions?.slice(0, 3).map((rolePermission) => (
                         <Badge
-                          key={rolePermission.id}
+                          key={
+                            rolePermission.permissionId ||
+                            rolePermission.permission?.id
+                          }
                           variant="outline"
                           className="text-xs"
                         >
@@ -625,9 +610,6 @@ export default function RolesPage() {
                         </span>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(role.createdAt).toLocaleDateString("fr-FR")}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

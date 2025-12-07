@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, permissions } = body;
+    const { name, permissions } = body;
 
     // Vérifier si le nom existe déjà
     const existingRole = await prisma.role.findUnique({
@@ -74,7 +74,6 @@ export async function POST(request: NextRequest) {
     const role = await prisma.role.create({
       data: {
         name,
-        description: description || null,
         permissions: {
           create: permissions.map((permissionId: string) => ({
             permissionId,

@@ -1,30 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    // Compter le nombre total de pannes
     const totalPannes = await prisma.panne.count();
 
-    const pannesEnAttente = await prisma.panne.count({
-      where: {
-        dateExecution: null,
-        dateCloture: null,
-      },
-    });
-
-    const pannesEnCours = await prisma.panne.count({
-      where: {
-        dateExecution: { not: null },
-        dateCloture: null,
-      },
-    });
-
-    const pannesResolues = await prisma.panne.count({
-      where: {
-        dateCloture: { not: null },
-      },
-    });
-
+    // Compter les pannes par type
     const pannesParType = await prisma.typepanne.findMany({
       include: {
         _count: {
@@ -35,48 +17,79 @@ export async function GET() {
       },
     });
 
-    const pannesParUrgence = await prisma.niveauUrgence.findMany({
-      include: {
-        _count: {
-          select: {
-            pannes: true,
-          },
+    // Compter les pannes utilisées dans des saisies HIM
+    const pannesAvecSaisies = await prisma.panne.count({
+      where: {
+        saisiehim: {
+          some: {},
         },
       },
     });
 
-    const pannesParSite = await prisma.site.findMany({
+    // Compter les pannes sans saisies HIM
+    const pannesSansSaisies = await prisma.panne.count({
+      where: {
+        saisiehim: {
+          none: {},
+        },
+      },
+    });
+
+    // Obtenir les 5 pannes les plus utilisées
+    const pannesPlusUtilisees = await prisma.panne.findMany({
       include: {
         _count: {
           select: {
-            engins: {
-              where: {
-                pannes: {
-                  some: {},
-                },
-              },
-            },
+            saisiehim: true,
+          },
+        },
+        typepanne: true,
+      },
+      orderBy: {
+        saisiehim: {
+          _count: "desc",
+        },
+      },
+      take: 5,
+    });
+
+    // Obtenir les pannes récemment créées
+    const pannesRecentees = await prisma.panne.findMany({
+      include: {
+        typepanne: true,
+        _count: {
+          select: {
+            saisiehim: true,
           },
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5,
     });
 
     const stats = {
       total: totalPannes,
-      enAttente: pannesEnAttente,
-      enCours: pannesEnCours,
-      resolues: pannesResolues,
+      avecSaisies: pannesAvecSaisies,
+      sansSaisies: pannesSansSaisies,
       parType: pannesParType.map((type) => ({
+        id: type.id,
         type: type.name,
         count: type._count.pannes,
       })),
-      parUrgence: pannesParUrgence.map((urgence) => ({
-        urgence: urgence.name,
-        count: urgence._count.pannes,
+      plusUtilisees: pannesPlusUtilisees.map((panne) => ({
+        id: panne.id,
+        nom: panne.name,
+        type: panne.typepanne?.name || "N/A",
+        count: panne._count.saisiehim,
       })),
-      parSite: pannesParSite.map((site) => ({
-        site: site.name,
-        count: site._count.engins,
+      recentees: pannesRecentees.map((panne) => ({
+        id: panne.id,
+        nom: panne.name,
+        type: panne.typepanne?.name || "N/A",
+        createdAt: panne.createdAt,
+        saisies: panne._count.saisiehim,
       })),
     };
 

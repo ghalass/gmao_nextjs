@@ -1,6 +1,6 @@
 // lib/validations/parcSchema.ts
 
-import yup from "../yupFr";
+import yup from "@/lib/yupFr";
 
 export const parcSchema = yup.object({
   name: yup

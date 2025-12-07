@@ -1,8 +1,6 @@
-// app/api/hims/route.ts
+// app/api/hims/route.ts - Version corrigée
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,12 +15,16 @@ export async function GET(request: NextRequest) {
       include: {
         panne: {
           include: {
-            engin: true,
             typepanne: true,
           },
         },
-        saisiehrm: true,
-        saisielubrifiants: {
+        saisiehrm: {
+          include: {
+            engin: true,
+          },
+        },
+        saisielubrifiant: {
+          // ← SINGULIER comme dans votre schéma
           include: {
             lubrifiant: {
               include: {
@@ -93,12 +95,16 @@ export async function POST(request: NextRequest) {
       include: {
         panne: {
           include: {
-            engin: true,
             typepanne: true,
           },
         },
-        saisiehrm: true,
-        saisielubrifiants: {
+        saisiehrm: {
+          include: {
+            engin: true,
+          },
+        },
+        saisielubrifiant: {
+          // ← SINGULIER comme dans votre schéma
           include: {
             lubrifiant: {
               include: {

@@ -40,14 +40,9 @@ import { DeleteEnginModal } from "@/components/engins/DeleteEnginModal";
 import { Engin } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
+import { exportExcel } from "@/lib/xlsxFn";
 
-type SortField =
-  | "name"
-  | "parc"
-  | "site"
-  | "status"
-  | "pannesCount"
-  | "createdAt";
+type SortField = "name" | "parc" | "site" | "status" | "pannesCount";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -178,37 +173,37 @@ export default function EnginsPage() {
     const filtered = enginsData.filter((engin: Engin) => {
       const globalMatch =
         globalSearch === "" ||
-        engin.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        engin.parc.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        engin.site.name.toLowerCase().includes(globalSearch.toLowerCase());
+        engin?.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        engin?.parc?.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        engin?.site?.name.toLowerCase().includes(globalSearch.toLowerCase());
 
       const nameMatch =
         columnFilters.name === "" ||
-        engin.name.toLowerCase().includes(columnFilters.name.toLowerCase());
+        engin?.name.toLowerCase().includes(columnFilters.name.toLowerCase());
 
       const parcMatch =
         columnFilters.parc === "" ||
-        engin.parc.name
+        engin?.parc?.name
           .toLowerCase()
           .includes(columnFilters.parc.toLowerCase());
 
       const siteMatch =
         columnFilters.site === "" ||
-        engin.site.name
+        engin?.site?.name
           .toLowerCase()
           .includes(columnFilters.site.toLowerCase());
 
       const statusMatch =
         columnFilters.status === "" ||
-        (columnFilters.status === "actif" && engin.active) ||
-        (columnFilters.status === "inactif" && !engin.active);
+        (columnFilters.status === "actif" && engin?.active) ||
+        (columnFilters.status === "inactif" && !engin?.active);
 
       return Boolean(
         globalMatch && nameMatch && parcMatch && siteMatch && statusMatch
       );
     });
 
-    filtered.sort((a: Engin, b: Engin) => {
+    filtered.sort((a: any, b: any) => {
       let aValue: string | number | Date | boolean = "";
       let bValue: string | number | Date | boolean = "";
 
@@ -218,12 +213,12 @@ export default function EnginsPage() {
           bValue = b.name;
           break;
         case "parc":
-          aValue = a.parc.name;
-          bValue = b.parc.name;
+          aValue = a.parc?.name || "";
+          bValue = b.parc?.name || "";
           break;
         case "site":
-          aValue = a.site.name;
-          bValue = b.site.name;
+          aValue = a.site?.name || "";
+          bValue = b.site?.name || "";
           break;
         case "status":
           aValue = a.active;
@@ -232,10 +227,6 @@ export default function EnginsPage() {
         case "pannesCount":
           aValue = a._count?.pannes || 0;
           bValue = b._count?.pannes || 0;
-          break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
           break;
         default:
           aValue = a.name;
@@ -288,30 +279,7 @@ export default function EnginsPage() {
 
   const handleExportToExcel = (): void => {
     try {
-      const exportData = filteredAndSortedEngins.map((engin: Engin) => ({
-        Nom: engin.name,
-        parc: engin.parc.name,
-        "Type de parc": engin.parc.typeparc.name,
-        site: engin.site.name,
-        Statut: engin.active ? "Actif" : "Inactif",
-        "Heures chassis initiales": engin.initialHeureChassis || 0,
-        "Nombre de pannes": engin._count?.pannes || 0,
-        "Date de création": new Date(engin.createdAt).toLocaleDateString(
-          "fr-FR"
-        ),
-        "Dernière modification": new Date(engin.updatedAt).toLocaleDateString(
-          "fr-FR"
-        ),
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Engins");
-
-      XLSX.writeFile(
-        workbook,
-        `engins_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
+      exportExcel("my-table-id", "engins");
     } catch (error) {
       console.error("Erreur lors de l'export Excel:", error);
       setError("Erreur lors de l'export des données");
@@ -434,14 +402,14 @@ export default function EnginsPage() {
             <span>Filtres actifs</span>
             {globalSearch && (
               <Badge variant="secondary" className="text-xs">
-                Recherche: "{globalSearch}"
+                Recherche: {globalSearch}
               </Badge>
             )}
             {Object.entries(columnFilters).map(
               ([key, value]) =>
                 value && (
                   <Badge key={key} variant="secondary" className="text-xs">
-                    {key}: "{value}"
+                    {key}: {value}
                   </Badge>
                 )
             )}
@@ -600,10 +568,6 @@ export default function EnginsPage() {
                 <span className="font-medium">Pannes</span>
               </SortableHeader>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -639,32 +603,30 @@ export default function EnginsPage() {
               </TableRow>
             ) : (
               paginatedEngins.map((engin: Engin) => (
-                <TableRow key={engin.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{engin.name}</TableCell>
+                <TableRow key={engin?.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">{engin?.name}</TableCell>
                   <TableCell>
                     <div>
-                      <div>{engin.parc.name}</div>
+                      <div>{engin?.parc?.name}</div>
                       <Badge variant="outline" className="text-xs mt-1">
-                        {engin.parc.typeparc.name}
+                        {engin?.parc?.typeparc?.name || "N/A"}
                       </Badge>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{engin.site.name}</Badge>
+                    <Badge variant="secondary">{engin?.site?.name}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={engin.active ? "default" : "secondary"}>
-                      {engin.active ? "Actif" : "Inactif"}
+                    <Badge variant={engin?.active ? "default" : "secondary"}>
+                      {engin?.active ? "Actif" : "Inactif"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {engin._count?.pannes || 0} panne(s)
+                      {engin?._count?.pannes || 0} panne(s)
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(engin.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

@@ -18,12 +18,48 @@ export interface UserWithPermissions {
   active: boolean;
   roles: Array<{
     id: string;
-    name: string;
-    permissions: Array<{
+    userId: string;
+    roleId: string;
+    role: {
       id: string;
-      resource: string;
-      action: string; // Action enum
-    }>;
+      name: string;
+      permissions: Array<{
+        id: string;
+        roleId: string;
+        permissionId: string;
+        permission: {
+          id: string;
+          resource: string;
+          action: string | null;
+        };
+      }>;
+    };
+  }>;
+}
+
+export interface UserWithPermissions {
+  id: string;
+  email: string;
+  name: string;
+  active: boolean;
+  roles: Array<{
+    id: string;
+    userId: string;
+    roleId: string;
+    role: {
+      id: string;
+      name: string;
+      permissions: Array<{
+        id: string;
+        roleId: string;
+        permissionId: string;
+        permission: {
+          id: string;
+          resource: string;
+          action: string | null;
+        };
+      }>;
+    };
   }>;
 }
 
@@ -35,16 +71,22 @@ export async function getUserWithPermissions(
     include: {
       roles: {
         include: {
-          permissions: true,
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
         },
       },
     },
-  });
+  }) as Promise<UserWithPermissions | null>;
 }
 
 export async function getUserPermissions(userId: string): Promise<string[]> {
-  // ✅ APPROCHE SIMPLIFIÉE ET FONCTIONNELLE
-  // 1. Récupérer l'utilisateur avec ses rôles et permissions
   const user = await prisma.user.findFirst({
     where: { id: userId },
     include: {
@@ -54,11 +96,7 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
             include: {
               permissions: {
                 include: {
-                  permission: {
-                    include: {
-                      resource: true,
-                    },
-                  },
+                  permission: true, // permission a 'resource' (string), pas 'resource.name'
                 },
               },
             },
@@ -72,13 +110,19 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
     return [];
   }
 
-  // 2. Extraire toutes les permissions uniques
   const permissionsSet = new Set<string>();
 
   user.roles.forEach((userRole) => {
     userRole.role.permissions.forEach((rolePermission) => {
-      const permissionString = `${rolePermission.permission.action}:${rolePermission.permission.resource.name}`;
-      permissionsSet.add(permissionString);
+      const permissionString = `${rolePermission.permission.action || ""}:${
+        rolePermission.permission.resource
+      }`; // 'resource' est une string
+      if (
+        rolePermission.permission.action &&
+        rolePermission.permission.resource
+      ) {
+        permissionsSet.add(permissionString);
+      }
     });
   });
 
@@ -122,45 +166,49 @@ export async function hasRole(
   return user.roles.some((userRole) => userRole.role.name === roleName);
 }
 
-export async function assignRoleToUser(
-  userId: string,
-  roleId: string
-): Promise<{ id: string; userId: string; roleId: string; createdAt: Date }> {
-  return await prisma.userRole.create({
-    data: {
-      userId,
-      roleId,
-    },
-  });
-}
+// export async function assignRoleToUser(
+//   userId: string,
+//   roleId: string
+// ): Promise<{ id: string; userId: string; roleId: string; createdAt: Date }> {
+//   return await prisma.userRole.create({
+//     data: {
+//       userId,
+//       roleId,
+//     },
+//   });
+// }
 
-export async function removeRoleFromUser(
-  userId: string,
-  roleId: string
-): Promise<{ count: number }> {
-  return await prisma.userRole.deleteMany({
-    where: {
-      userId,
-      roleId,
-    },
-  });
-}
+// export async function removeRoleFromUser(
+//   userId: string,
+//   roleId: string
+// ): Promise<{ count: number }> {
+//   return await prisma.userRole.deleteMany({
+//     where: {
+//       userId,
+//       roleId,
+//     },
+//   });
+// }
 
 export async function assignPermissionToRole(
   roleId: string,
   permissionId: string
 ): Promise<{
-  id: string;
   roleId: string;
   permissionId: string;
-  createdAt: Date;
 }> {
-  return await prisma.rolePermission.create({
+  const result = await prisma.rolePermission.create({
     data: {
       roleId,
       permissionId,
     },
+    select: {
+      roleId: true,
+      permissionId: true,
+    },
   });
+
+  return result;
 }
 
 export async function removePermissionFromRole(

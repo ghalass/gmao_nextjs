@@ -56,10 +56,10 @@ export function DeleteParcModal({
             Êtes-vous sûr de vouloir supprimer le parc{" "}
             <strong>&quot;{parc?.name}&quot;</strong> ? Cette action est
             irréversible.
-            {parc?._count && parc._count.engins > 0 && (
+            {parc?._count && (parc._count.engins || 0) > 0 && (
               <span className="block mt-2 text-destructive font-medium">
-                Attention : Ce parc contient {parc._count.engins} engin(s). La
-                suppression pourrait affecter ces engins.
+                Attention : Ce parc contient {parc._count.engins || 0} engin(s).
+                La suppression pourrait affecter ces engins.
               </span>
             )}
           </DialogDescription>

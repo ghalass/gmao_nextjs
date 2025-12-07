@@ -103,7 +103,7 @@ export function EnginModal({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Nom de l'engin</Label>
+            <Label htmlFor="name">{"Nom de l'engin"}</Label>
             <Input
               id="name"
               name="name"
@@ -141,7 +141,7 @@ export function EnginModal({
               <SelectContent>
                 {parcs.map((parc) => (
                   <SelectItem key={parc.id} value={parc.id}>
-                    {parc.name} ({parc.typeparc.name})
+                    {parc.name} ({parc?.typeparc?.name})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -50,21 +50,22 @@ export function DeleteEnginModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <Trash2 className="h-5 w-5" />
-            Supprimer l'engin
+            {"Supprimer l'engin"}
           </DialogTitle>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer l'engin{" "}
+            {"Êtes-vous sûr de vouloir supprimer l'engin"}
             <strong>&quot;{engin?.name}&quot;</strong> ? Cette action est
             irréversible.
             {engin?._count &&
-              (engin._count.pannes > 0 ||
-                engin._count.saisiehrms > 0 ||
-                engin._count.saisiehim > 0) && (
+              ((engin._count.pannes || 0) > 0 ||
+                (engin._count.saisiehrm || 0) > 0 ||
+                (engin._count.saisiehim || 0) > 0) && (
                 <span className="block mt-2 text-destructive font-medium">
                   Attention : Cet engin a des données associées (
-                  {engin._count.pannes} panne(s), {engin._count.saisiehrms}{" "}
-                  saisie(s) HRM, {engin._count.saisiehim} saisie(s) HIM). La
-                  suppression pourrait affecter ces données.
+                  {engin._count.pannes || 0} panne(s),{" "}
+                  {engin._count.saisiehrm || 0} saisie(s) HRM,{" "}
+                  {engin._count.saisiehim || 0} saisie(s) HIM). La suppression
+                  pourrait affecter ces données.
                 </span>
               )}
           </DialogDescription>

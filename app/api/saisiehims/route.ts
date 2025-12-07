@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type");
     const dateDebut = searchParams.get("dateDebut");
     const dateFin = searchParams.get("dateFin");
     const engin = searchParams.get("engin");
@@ -80,7 +79,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        saisielubrifiants: {
+        saisielubrifiant: {
           include: {
             lubrifiant: true,
             typeconsommationlub: true,
@@ -110,8 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { panneId, him, ni, saisiehrmId, enginId, obs, origineSaisieId } =
-      body;
+    const { panneId, him, ni, saisiehrmId, enginId, obs } = body;
 
     const saisiehim = await prisma.saisiehim.create({
       data: {
