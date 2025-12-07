@@ -29,4 +29,8 @@ pnpm build
 echo "🔄 Redémarrage de l'application..."
 pm2 restart gmao-app
 
+# Voir logs avec PM2
+echo "🔄 Logs de l'application..."
+pm2 pm2 logs gmao-app
+
 echo "✅ Déploiement terminé avec succès!"
