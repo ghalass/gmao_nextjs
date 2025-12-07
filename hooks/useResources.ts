@@ -1,7 +1,7 @@
 // hooks/useResources.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { API } from "@/lib/constantes";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export interface Resource {
   id: string;

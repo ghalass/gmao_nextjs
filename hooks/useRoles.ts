@@ -4,7 +4,7 @@
 import { API } from "@/lib/constantes";
 import { Role, roleCreateDto } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 // Types pour les opérations de mise à jour
 interface UpdateRoleData {

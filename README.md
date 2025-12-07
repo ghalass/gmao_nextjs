@@ -1,11 +1,7 @@
 pnpm create next-app@latest gmao
 
 pnpm dlx shadcn@latest init
-pnpm dlx shadcn@latest add button alert card dialog field label
-pnpm dlx shadcn@latest add input input-group sidebar sonner badge
-pnpm dlx shadcn@latest add avatar collapsible pnpm dlx shadcn@latest add
-pnpm dlx shadcn@latest add table alert-dialog switch spinner
-pnpm dlx shadcn@latest add select dropdown-menu calendar
+pnpm dlx shadcn@latest add button
 pnpm add next-themes
 
 pnpm add prisma @types/node @types/pg --save-dev
