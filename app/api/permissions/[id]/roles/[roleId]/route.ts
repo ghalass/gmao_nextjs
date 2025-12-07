@@ -11,16 +11,16 @@ const the_resource = "permissions";
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ id: string; roleId: string }> }
+  context: { params: Promise<{ id: string; roleId: string }> } // ✅ Changé: permissionId → id
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectCreateRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { id, roleId } = await context.params;
+  const { id: permissionId, roleId } = await context.params; // ✅ Destructuration avec alias
 
   try {
-    await assignPermissionToRole(roleId, id);
+    await assignPermissionToRole(roleId, permissionId);
 
     return NextResponse.json({
       message: "Permission assignée au rôle avec succès",
@@ -44,16 +44,16 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string; roleId: string }> }
+  context: { params: Promise<{ id: string; roleId: string }> } // ✅ Changé: permissionId → id
 ) {
   // 🔒 Vérifier les permissions
   const protectionError = await protectDeleteRoute(request, the_resource);
   if (protectionError) return protectionError;
 
-  const { id, roleId } = await context.params;
+  const { id: permissionId, roleId } = await context.params; // ✅ Destructuration avec alias
 
   try {
-    await removePermissionFromRole(roleId, id);
+    await removePermissionFromRole(roleId, permissionId);
 
     return NextResponse.json({
       message: "Permission retirée du rôle avec succès",
