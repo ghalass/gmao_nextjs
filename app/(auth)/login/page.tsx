@@ -23,12 +23,24 @@ import yup from "@/lib/yupFr";
 import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Ajouté pour la redirection
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  // ✅ Schémas de validation individuels pour chaque champ
-  const emailSchema = yup.string().email().required().label("Adresse Email");
-  const passwordSchema = yup.string().min(6).required().label("Mot de passe");
+  const router = useRouter(); // Pour la redirection après connexion
+
+  // ✅ Schémas de validation
+  const emailSchema = yup
+    .string()
+    .email("Format d'email invalide")
+    .required("L'email est requis")
+    .label("Adresse Email");
+  const passwordSchema = yup
+    .string()
+    .min(6, "Le mot de passe doit contenir au moins 6 caractères")
+    .required("Le mot de passe est requis")
+    .label("Mot de passe");
 
   // ✅ Schéma global pour la soumission
   const validationSchema = yup.object({
@@ -43,19 +55,30 @@ export default function LoginPage() {
   const form = useForm({
     defaultValues: {
       email: "sidi@gmail.com",
-      password: "123456",
+      password: "1234560",
     },
     onSubmit: async ({ value }) => {
       try {
         setError("");
         setIsSubmitting(true);
         await validationSchema.validate(value, { abortEarly: false });
-
-        // ✅ Appel direct de ta fonction
-        await login(value.email, value.password);
+        const success = await login(value.email, value.password);
+        if (success) {
+          router.push("/"); // ou router.refresh() pour revalider les données
+          toast.success("Connecté avec succès");
+        } else {
+          setError("Échec de la connexion. Vérifiez vos identifiants.");
+        }
       } catch (err: any) {
-        console.error("Erreur d’inscription:", err);
-        setError(err.message || "Erreur lors de la connection");
+        console.error("Erreur de connexion:", err);
+
+        if (err.name === "ValidationError" && err.errors) {
+          setError(err.errors.join(", "));
+        } else if (err.response?.data?.message) {
+          setError(err.response.data.message);
+        } else {
+          setError(err.message || "Erreur lors de la connexion");
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -63,15 +86,22 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col gap-2 items-center justify-center">
-      <ModeToggle />
-      <Card className="w-md">
+    <div className="min-h-screen flex flex-col gap-4 items-center justify-center p-4">
+      <div className="self-center">
+        <ModeToggle />
+      </div>
+
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Se connecter</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl text-center">Se connecter</CardTitle>
+          <CardDescription className="text-center">
             Entrez vos identifiants pour accéder à votre compte.
-            {error && <p className="text-red-400">{error}</p>}
           </CardDescription>
+          {error && (
+            <div className="mt-2 p-3 bg-destructive/10 border border-destructive rounded-md">
+              <p className="text-sm text-destructive text-center">{error}</p>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent>
@@ -79,10 +109,11 @@ export default function LoginPage() {
             id="login-form"
             onSubmit={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               form.handleSubmit();
             }}
           >
-            <FieldGroup>
+            <FieldGroup className="space-y-4">
               {/* EMAIL avec validation */}
               <form.Field
                 name="email"
@@ -91,33 +122,31 @@ export default function LoginPage() {
                     try {
                       emailSchema.validateSync(value);
                       return undefined;
-                    } catch (err) {
-                      if (err instanceof yup.ValidationError) {
-                        return err.message;
-                      }
-                      return "Erreur de validation";
+                    } catch (err: any) {
+                      return err.message || "Email invalide";
                     }
                   },
                   onBlur: ({ value }) => {
                     try {
                       emailSchema.validateSync(value);
                       return undefined;
-                    } catch (err) {
-                      if (err instanceof yup.ValidationError) {
-                        return err.message;
-                      }
-                      return "Erreur de validation";
+                    } catch (err: any) {
+                      return err.message || "Email invalide";
                     }
                   },
                 }}
-                children={(field) => {
+              >
+                {(field) => {
                   const isInvalid =
                     field.state.meta.isTouched &&
                     field.state.meta.errors.length > 0;
 
                   return (
                     <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>
+                        Email
+                        <span className="text-destructive"> *</span>
+                      </FieldLabel>
                       <Input
                         disabled={isSubmitting}
                         id={field.name}
@@ -128,7 +157,8 @@ export default function LoginPage() {
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={isInvalid}
                         placeholder="exemple@email.com"
-                        autoComplete="off"
+                        autoComplete="email"
+                        className={isInvalid ? "border-destructive" : ""}
                       />
                       {isInvalid && (
                         <FieldError
@@ -140,7 +170,7 @@ export default function LoginPage() {
                     </Field>
                   );
                 }}
-              />
+              </form.Field>
 
               {/* PASSWORD avec validation */}
               <form.Field
@@ -150,33 +180,31 @@ export default function LoginPage() {
                     try {
                       passwordSchema.validateSync(value);
                       return undefined;
-                    } catch (err) {
-                      if (err instanceof yup.ValidationError) {
-                        return err.message;
-                      }
-                      return "Erreur de validation";
+                    } catch (err: any) {
+                      return err.message || "Mot de passe invalide";
                     }
                   },
                   onBlur: ({ value }) => {
                     try {
                       passwordSchema.validateSync(value);
                       return undefined;
-                    } catch (err) {
-                      if (err instanceof yup.ValidationError) {
-                        return err.message;
-                      }
-                      return "Erreur de validation";
+                    } catch (err: any) {
+                      return err.message || "Mot de passe invalide";
                     }
                   },
                 }}
-                children={(field) => {
+              >
+                {(field) => {
                   const isInvalid =
                     field.state.meta.isTouched &&
                     field.state.meta.errors.length > 0;
 
                   return (
                     <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Mot de passe</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>
+                        Mot de passe
+                        <span className="text-destructive"> *</span>
+                      </FieldLabel>
                       <Input
                         disabled={isSubmitting}
                         id={field.name}
@@ -187,7 +215,8 @@ export default function LoginPage() {
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={isInvalid}
                         placeholder="********"
-                        autoComplete="off"
+                        autoComplete="current-password"
+                        className={isInvalid ? "border-destructive" : ""}
                       />
                       {isInvalid && (
                         <FieldError
@@ -199,45 +228,63 @@ export default function LoginPage() {
                     </Field>
                   );
                 }}
-              />
+              </form.Field>
             </FieldGroup>
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-2">
-          <Field orientation="horizontal">
+        <CardFooter className="flex flex-col gap-4">
+          <div className="w-full">
             <Button
+              type="submit"
+              form="login-form"
               disabled={isSubmitting}
-              type="button"
-              variant="outline"
-              onClick={() => {
-                form.reset(), setError("");
-              }}
+              className="w-full"
             >
-              Réinitialiser
-            </Button>
-            <Button type="submit" form="login-form" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Spinner /> Connexion...
+                  <Spinner className="h-4 w-4" /> Connexion...
                 </span>
               ) : (
                 "Se connecter"
               )}
             </Button>
-          </Field>
+          </div>
 
-          <p className="text-sm text-gray-500 mt-4 text-center">
-            Pas de compte ?{" "}
-            <Link href="/register" className="text-blue-500 hover:underline">
-              {"S'inscrire"}
-            </Link>
-          </p>
-          <p className="text-sm text-gray-500 mt-4 text-center">
-            <Link href="/" className="text-blue-500 hover:underline">
-              {"Page d'acceuil"}
-            </Link>
-          </p>
+          <div className="flex justify-center w-full">
+            <Button
+              disabled={isSubmitting}
+              type="button"
+              variant="outline"
+              onClick={() => {
+                form.reset();
+                setError("");
+              }}
+              size="sm"
+            >
+              Réinitialiser
+            </Button>
+          </div>
+
+          <div className="text-center space-y-2 text-sm">
+            <p className="text-muted-foreground">
+              Pas de compte ?{" "}
+              <Link
+                href="/register"
+                className="text-primary hover:underline font-medium"
+              >
+                S&apos;inscrire
+              </Link>
+            </p>
+            <p className="text-muted-foreground">
+              <Link
+                href="/"
+                className="text-primary hover:underline font-medium"
+              >
+                Retour à la page d&apos;accueil
+              </Link>
+            </p>
+          </div>
         </CardFooter>
       </Card>
     </div>

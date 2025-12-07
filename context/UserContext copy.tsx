@@ -31,7 +31,7 @@ type User = {
   email: string;
   createdAt: Date;
   updatedAt: Date;
-} | null;
+} | null; // Utilisez null au lieu d'un objet vide
 
 interface UserContextType {
   user: User;
@@ -42,16 +42,14 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User>(null); // Initialisez avec null
 
   async function refreshUser() {
     try {
       const res = await fetch(`${API}/auth/me`);
       if (res.ok) {
         const data = await res.json();
-        // Vérifier si l'API renvoie { user: ... } ou directement l'utilisateur
-        const userData = data.user !== undefined ? data.user : data;
-        setUser(userData);
+        setUser(data);
       } else {
         setUser(null);
       }
@@ -61,35 +59,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Solution pour éviter l'erreur "Calling setState synchronously within an effect"
   useEffect(() => {
-    let isMounted = true;
-
-    const initUser = async () => {
-      try {
-        const res = await fetch(`${API}/auth/me`);
-        if (isMounted) {
-          if (res.ok) {
-            const data = await res.json();
-            const userData = data.user !== undefined ? data.user : data;
-            setUser(userData);
-          } else {
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        if (isMounted) {
-          setUser(null);
-        }
-      }
-    };
-
-    initUser();
-
-    return () => {
-      isMounted = false;
-    };
+    refreshUser();
   }, []);
 
   return (
