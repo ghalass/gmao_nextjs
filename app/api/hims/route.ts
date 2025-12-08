@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     if (!saisiehrm) {
       return NextResponse.json(
-        { error: "Saisie HRM non trouvée" },
+        { message: "Saisie HRM non trouvée" },
         { status: 404 }
       );
     }
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
 
     if (existingHim) {
       return NextResponse.json(
-        { error: "Une saisie HIM existe déjà pour cette panne et cette date" },
+        {
+          message: "Une saisie HIM existe déjà pour cette panne et cette date",
+        },
         { status: 400 }
       );
     }

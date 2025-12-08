@@ -3,15 +3,15 @@
 
 import { API } from "@/lib/constantes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 // Interface User cohérente avec votre schéma
 export interface User {
   createdAt: string | number | Date;
-  roles: any;
+  roles: string[];
   id: string;
   email: string;
   name: string;
+  active?: boolean;
   // Ajoutez d'autres champs si nécessaire
 }
 
@@ -19,10 +19,9 @@ export interface userCreateDto {
   email: string;
   name: string;
   password: string;
-  role: string;
+  active?: boolean;
+  roles?: string[];
 }
-
-const entity = "utilisateurs";
 
 export function useUsers() {
   const queryClient = useQueryClient();
@@ -32,32 +31,27 @@ export function useUsers() {
     queryKey: ["users"],
     queryFn: async (): Promise<User[]> => {
       const response = await fetch(`${API}/users`);
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.message || `Erreur lors du chargement des ${entity || "données"}`
-        );
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
   // 🔹 CREATE USER
   const createUser = useMutation<User, Error, userCreateDto>({
-    mutationFn: async ({ email, name, password, role }) => {
+    mutationFn: async ({ email, name, password, roles, active }) => {
       const response = await fetch(`${API}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, password, role }),
+        body: JSON.stringify({ email, name, password, roles, active }),
       });
-
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.message || `Erreur lors du création des ${entity || "données"}`
-        );
+        throw new Error(dataRes.message || "Erreur lors du création");
       }
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -73,33 +67,24 @@ export function useUsers() {
       email: string;
       name: string;
       password: string;
-      role: string[];
+      active?: boolean;
+      roles: string[];
     }
   >({
-    mutationFn: async ({ id, email, name, password, role }) => {
+    mutationFn: async ({ id, email, name, password, roles, active }) => {
       const response = await fetch(`${API}/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, password, role }),
+        body: JSON.stringify({ email, name, password, roles, active }),
       });
-
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.message ||
-            `Erreur lors du mise à jour des ${entity || "données"}`
-        );
+        throw new Error(dataRes.message || "Erreur lors du modification");
       }
-
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Utilisateur modifié !");
-      return response.json();
+      return dataRes;
     },
-    onError: (error: any) => {
-      // Ne pas afficher de toast si c'est une erreur de validation
-      if (error.status !== 400 && error.status !== 409) {
-        toast.error(error.message);
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
@@ -107,21 +92,14 @@ export function useUsers() {
   const deleteUser = useMutation<User, Error, { id: string }>({
     mutationFn: async ({ id }) => {
       const response = await fetch(`${API}/users/${id}`, { method: "DELETE" });
-
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.message ||
-            `Erreur lors du suppression des ${entity || "données"}`
-        );
+        throw new Error(dataRes.message || "Erreur lors du suppression");
       }
-
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("Utilisateur supprimé !");
-      return response.json();
+      return dataRes;
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
@@ -141,23 +119,16 @@ export function useUsers() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
-
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            `Erreur lors du mise à jour des ${entity || "données"}`
+          dataRes.message || "Erreur lors du mise à jour profile"
         );
       }
-
-      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
-      toast.success("Profil mis à jour !");
-      return response.json();
+      return dataRes;
     },
-    onError: (error: any) => {
-      if (error.status !== 400 && error.status !== 409) {
-        toast.error(error.message);
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
@@ -178,18 +149,16 @@ export function useUsers() {
           password: newPassword,
         }),
       });
-
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            `Erreur lors du mise à jour des ${entity || "données"}`
+          dataRes.message || "Erreur lors du mise à jour mot de passe"
         );
       }
-      return response.json();
+      return dataRes;
     },
-    onError: (error: any) => {
-      toast.error(error.message);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 

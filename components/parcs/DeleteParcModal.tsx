@@ -1,5 +1,5 @@
 // components/parcs/DeleteParcModal.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,8 +44,13 @@ export function DeleteParcModal({
 
   const isSubmitting = deleteParc.isPending;
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -76,7 +81,7 @@ export function DeleteParcModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClode}
             disabled={isSubmitting}
           >
             Annuler

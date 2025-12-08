@@ -95,9 +95,13 @@ export function PanneModal({
   }, [open, panne]);
 
   const isLoading = createPanne.isPending || updatePanne.isPending;
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -160,7 +164,7 @@ export function PanneModal({
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClode}
               disabled={isLoading}
             >
               Annuler

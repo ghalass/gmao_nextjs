@@ -9,16 +9,9 @@ export type PermissionWithResource = {
   name: string;
   description?: string;
   action: string;
-  resourceId: string;
+  resource: string;
   createdAt: string;
   updatedAt: string;
-  resource: {
-    id: string;
-    name: string;
-    label: string;
-    createdAt: string;
-    updatedAt: string;
-  };
 };
 
 export interface Permission {
@@ -26,26 +19,22 @@ export interface Permission {
   name: string;
   description?: string;
   action: string;
-  resourceId: string;
-  resource: {
-    id: string;
-    name: string;
-    label: string;
-  };
+  resource: string;
+
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreatePermissionData {
   name: string;
-  resourceId: string; // Changez de 'resource' à 'resourceId'
+  resource: string; // Changez de 'resource' à 'resource'
   action: string;
   description?: string;
 }
 
 export interface UpdatePermissionData {
   name?: string;
-  resourceId?: string; // Changez de 'resource' à 'resourceId'
+  resource?: string; // Changez de 'resource' à 'resource'
   action?: string;
   description?: string;
 }
@@ -59,13 +48,11 @@ export const usePermissions = () => {
     queryKey: ["permissions"],
     queryFn: async (): Promise<Permission[]> => {
       const response = await fetch(`${API}/permissions`);
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.message || "Erreur lors du chargement des permissions"
-        );
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return data;
+      return dataRes;
     },
   });
 
@@ -73,7 +60,7 @@ export const usePermissions = () => {
   const createPermission = useMutation({
     mutationFn: async (data: {
       name: string;
-      resourceId: string;
+      resource: string;
       action: string;
       description?: string;
     }) => {
@@ -84,13 +71,11 @@ export const usePermissions = () => {
         },
         body: JSON.stringify(data),
       });
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          res?.message || "Erreur lors de la création de la permission"
-        );
+        throw new Error(dataRes.message || "Erreur lors du création");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["permissions"] });
@@ -113,14 +98,11 @@ export const usePermissions = () => {
         },
         body: JSON.stringify(data),
       });
-
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          res?.message || "Erreur lors de la modification de la permission!!"
-        );
+        throw new Error(dataRes.message || "Erreur lors du modification");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["permissions"] });
@@ -133,13 +115,11 @@ export const usePermissions = () => {
       const response = await fetch(`/api/permissions/${id}`, {
         method: "DELETE",
       });
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          res?.message || "Erreur lors de la suppression de la permission"
-        );
+        throw new Error(dataRes.message || "Erreur lors du suppression");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["permissions"] });
@@ -206,10 +186,11 @@ export const usePermission = (id: string) => {
     queryKey: ["permissions", id],
     queryFn: async (): Promise<Permission> => {
       const response = await fetch(`${API}/permissions/${id}`);
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement de la permission");
+        throw new Error(dataRes.message || "Erreur lors de chargement");
       }
-      return response.json();
+      return dataRes;
     },
     enabled: !!id,
   });

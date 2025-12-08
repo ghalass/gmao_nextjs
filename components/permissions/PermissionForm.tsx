@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API } from "@/lib/constantes";
 
 interface SimplePermissionFormProps {
   initialData?: any;
@@ -28,7 +29,6 @@ const actionOptions = [
   { value: "create", label: "Création" },
   { value: "update", label: "Modification" },
   { value: "delete", label: "Suppression" },
-  { value: "manage", label: "Gestion complète" },
 ];
 
 export function PermissionForm({
@@ -40,12 +40,12 @@ export function PermissionForm({
 }: SimplePermissionFormProps) {
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
-    resourceId: initialData?.resourceId || "",
+    resource: initialData?.resource || "",
     action: initialData?.action || "",
     description: initialData?.description || "",
   });
 
-  const [resources, setResources] = useState<any[]>([]);
+  const [resources, setResources] = useState<string[]>([]);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
 
   // Charger les ressources une seule fois
@@ -53,7 +53,7 @@ export function PermissionForm({
     const loadResources = async () => {
       setIsLoadingResources(true);
       try {
-        const response = await fetch("/api/tables");
+        const response = await fetch(`${API}/tables`);
         if (response.ok) {
           const data = await response.json();
           setResources(data);
@@ -100,10 +100,10 @@ export function PermissionForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="resourceId">Ressource *</Label>
+          <Label htmlFor="resource">Ressource *</Label>
           <Select
-            value={formData.resourceId}
-            onValueChange={(value) => handleChange("resourceId", value)}
+            value={formData.resource}
+            onValueChange={(value) => handleChange("resource", value)}
             disabled={isSubmitting || isLoadingResources}
           >
             <SelectTrigger>
@@ -172,7 +172,7 @@ export function PermissionForm({
           disabled={
             isSubmitting ||
             !formData.name ||
-            !formData.resourceId ||
+            !formData.resource ||
             !formData.action
           }
         >

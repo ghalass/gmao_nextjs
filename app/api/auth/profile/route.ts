@@ -22,7 +22,7 @@ export async function PATCH(request: NextRequest) {
 
     if (!existingUser) {
       return NextResponse.json(
-        { error: "Utilisateur introuvable" },
+        { message: "Utilisateur introuvable" },
         { status: 404 }
       );
     }
@@ -75,11 +75,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: session.userId },
       data: updateData,
       include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
+        roles: true,
       },
     });
 

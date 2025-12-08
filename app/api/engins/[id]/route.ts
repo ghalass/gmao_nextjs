@@ -14,19 +14,19 @@ interface Context {
   }>;
 }
 
-const resource = "lubrifiant";
+const the_resource = "engins";
 
 export async function GET(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de l'engin manquant" },
+        { message: "ID de l'engin manquant" },
         { status: 400 }
       );
     }
@@ -105,14 +105,14 @@ export async function GET(request: NextRequest, context: Context) {
 export async function PUT(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de l'engin manquant" },
+        { message: "ID de l'engin manquant" },
         { status: 400 }
       );
     }
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (duplicateEngin) {
       return NextResponse.json(
-        { error: "Un autre engin avec ce nom existe déjà" },
+        { message: "Un autre engin avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (!parcExists) {
       return NextResponse.json(
-        { error: "Le parc spécifié n'existe pas" },
+        { message: "Le parc spécifié n'existe pas" },
         { status: 404 }
       );
     }
@@ -167,7 +167,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (!siteExists) {
       return NextResponse.json(
-        { error: "Le site spécifié n'existe pas" },
+        { message: "Le site spécifié n'existe pas" },
         { status: 404 }
       );
     }
@@ -228,14 +228,14 @@ export async function PUT(request: NextRequest, context: Context) {
 export async function DELETE(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de l'engin manquant" },
+        { message: "ID de l'engin manquant" },
         { status: 400 }
       );
     }

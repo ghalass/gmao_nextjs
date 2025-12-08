@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-const resource = "typepanne";
+const the_resource = "typepanne";
 
 export async function GET(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const typepannes = await prisma.typepanne.findMany({
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectCreateRoute(request, resource);
+    const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const body = await request.json();
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     if (!name) {
       return NextResponse.json(
-        { error: "Le nom est obligatoire" },
+        { message: "Le nom est obligatoire" },
         { status: 400 }
       );
     }
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     if (existingTypepanne) {
       return NextResponse.json(
-        { error: "Un type de panne avec ce nom existe déjà" },
+        { message: "Un type de panne avec ce nom existe déjà" },
         { status: 409 }
       );
     }

@@ -1,24 +1,22 @@
 // app/api/roles/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { roleCreateSchema } from "@/lib/validations/roleSchema";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-const resource = "role";
+const the_resource = "role";
 
 // GET - Récupérer tous les rôles
 export async function GET(request: NextRequest) {
   try {
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const roles = await prisma.role.findMany({
       include: {
-        permissions: {
-          include: {
-            permission: true,
-          },
-        },
+        permissions: true,
+        user: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -38,7 +36,7 @@ export async function GET(request: NextRequest) {
 // POST - Créer un rôle
 export async function POST(request: NextRequest) {
   try {
-    const protectionError = await protectCreateRoute(request, resource);
+    const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const body = await request.json();
@@ -56,7 +54,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, permissions } = body;
+    const { name, description, permissions } = body;
+    console.log(body);
 
     // Vérifier si le nom existe déjà
     const existingRole = await prisma.role.findUnique({
@@ -65,33 +64,65 @@ export async function POST(request: NextRequest) {
 
     if (existingRole) {
       return NextResponse.json(
-        { error: "Ce nom de rôle est déjà utilisé" },
+        { message: "Ce nom de rôle est déjà utilisé" },
         { status: 409 }
       );
     }
 
-    // Créer le rôle avec les permissions
+    // Préparer les données de création
+    const createData: any = {
+      name: name.trim(),
+    };
+
+    // Ajouter la description si elle existe
+    if (
+      description !== undefined &&
+      description !== null &&
+      description.trim() !== ""
+    ) {
+      createData.description = description.trim();
+    }
+
+    // Ajouter les permissions si elles existent
+    if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+      createData.permissions = {
+        connect: permissions.map((permissionId: string) => ({
+          id: permissionId,
+        })),
+      };
+    }
+
+    // Créer le rôle
     const role = await prisma.role.create({
-      data: {
-        name,
-        permissions: {
-          create: permissions.map((permissionId: string) => ({
-            permissionId,
-          })),
-        },
-      },
+      data: createData,
       include: {
-        permissions: {
-          include: {
-            permission: true,
-          },
-        },
+        permissions: true,
+        user: true,
       },
     });
 
     return NextResponse.json(role, { status: 201 });
   } catch (error: any) {
     console.error("Erreur POST /api/roles:", error);
+
+    // Gestion spécifique des erreurs Prisma
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { message: "Ce nom de rôle est déjà utilisé" },
+          { status: 409 }
+        );
+      }
+
+      if (error.code === "P2025") {
+        // Une des permissions n'existe pas
+        return NextResponse.json(
+          { message: "Une ou plusieurs permissions spécifiées n'existent pas" },
+          { status: 400 }
+        );
+      }
+    }
+
     return NextResponse.json(
       {
         error: error.message || "Erreur lors de la création du rôle",

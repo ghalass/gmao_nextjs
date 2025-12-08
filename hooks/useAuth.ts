@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function useAuth() {
-  const { refreshUser } = useRouter();
+  const { refreshUser } = useUser();
   const router = useRouter();
 
   // Fonction pour extraire le message d'erreur de la réponse
@@ -54,7 +54,7 @@ export function useAuth() {
       const errorMessage = extractErrorMessage(data);
       throw new Error(errorMessage);
     } else {
-      await refreshUser();
+      // await refreshUser();
       toast.success("Inscription réussie !");
       return true;
     }

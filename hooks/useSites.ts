@@ -21,11 +21,11 @@ export const useSites = () => {
     queryKey: ["sites"],
     queryFn: async (): Promise<Site[]> => {
       const response = await fetch(`${API}/sites`);
-      const data = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Erreur lors du chargement des sites");
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return data;
+      return dataRes;
     },
   });
 
@@ -38,11 +38,11 @@ export const useSites = () => {
         },
         body: JSON.stringify(data),
       });
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(res.message || "Erreur lors de la création du site");
+        throw new Error(dataRes.message || "Erreur lors du création");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
@@ -62,14 +62,11 @@ export const useSites = () => {
         },
         body: JSON.stringify(data),
       });
-
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(
-          res.message || "Erreur lors de la modification du site"
-        );
+        throw new Error(dataRes.message || "Erreur lors du modification");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });
@@ -81,12 +78,11 @@ export const useSites = () => {
       const response = await fetch(`${API}/sites/${id}`, {
         method: "DELETE",
       });
-
-      const res = await response.json();
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error(res.message || "Erreur lors de la suppression du site");
+        throw new Error(dataRes.message || "Erreur lors du suppression");
       }
-      return res;
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sites"] });

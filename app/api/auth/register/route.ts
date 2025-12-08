@@ -87,7 +87,7 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Cet email est déjà utilisé" },
+        { message: "Cet email est déjà utilisé" },
         { status: 400 }
       );
     }

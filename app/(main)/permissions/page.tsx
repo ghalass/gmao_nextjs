@@ -128,7 +128,7 @@ export default function PermissionsPage() {
           name: data.name,
           description: data.description,
           action: data.action,
-          resourceId: data.resourceId,
+          resource: data.resource,
         };
         await updatePermission.mutateAsync({
           id: selectedPermission.id,
@@ -139,7 +139,7 @@ export default function PermissionsPage() {
           name: data.name,
           description: data.description,
           action: data.action,
-          resourceId: data.resourceId,
+          resource: data.resource,
         };
         await createPermission.mutateAsync(apiData);
       }
@@ -230,7 +230,7 @@ export default function PermissionsPage() {
           .includes(globalSearch.toLowerCase()) ??
           false) ||
         permission.action.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        (permission.resource?.name
+        (permission.resource
           ?.toLowerCase()
           .includes(globalSearch.toLowerCase()) ??
           false);
@@ -244,7 +244,7 @@ export default function PermissionsPage() {
 
       const resourceMatch =
         columnFilters.resource === "" ||
-        (permission.resource?.name
+        (permission.resource
           ?.toLowerCase()
           .includes(columnFilters.resource.toLowerCase()) ??
           false);
@@ -273,8 +273,8 @@ export default function PermissionsPage() {
 
     // Tri
     filtered.sort((a: Permission, b: Permission) => {
-      let aValue: string | number | Date = "";
-      let bValue: string | number | Date = "";
+      let aValue: string | number;
+      let bValue: string | number;
 
       switch (sortField) {
         case "name":
@@ -282,8 +282,8 @@ export default function PermissionsPage() {
           bValue = b.name;
           break;
         case "resource":
-          aValue = a.resource?.name || "";
-          bValue = b.resource?.name || "";
+          aValue = a.resource || "";
+          bValue = b.resource || "";
           break;
         case "action":
           aValue = a.action;
@@ -293,10 +293,7 @@ export default function PermissionsPage() {
           aValue = a.description || "";
           bValue = b.description || "";
           break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
+
         default:
           aValue = a.name;
           bValue = b.name;
@@ -306,10 +303,6 @@ export default function PermissionsPage() {
         return sortDirection === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === "asc"
-          ? aValue.getTime() - bValue.getTime()
-          : bValue.getTime() - aValue.getTime();
       }
       return 0;
     });
@@ -650,10 +643,6 @@ export default function PermissionsPage() {
                 </div>
               </SortableHeader>
 
-              <SortableHeader field="createdAt">
-                <span className="font-medium">Date de création</span>
-              </SortableHeader>
-
               <TableHead className="text-right">
                 <span className="font-medium">Actions</span>
               </TableHead>
@@ -695,7 +684,7 @@ export default function PermissionsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
-                      {permission.resource?.name || (
+                      {permission.resource || (
                         <span className="text-muted-foreground/50">N/A</span>
                       )}
                     </Badge>
@@ -714,9 +703,7 @@ export default function PermissionsPage() {
                       <span className="text-muted-foreground/50">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(permission.createdAt).toLocaleDateString("fr-FR")}
-                  </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

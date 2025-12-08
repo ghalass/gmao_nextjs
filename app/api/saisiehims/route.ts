@@ -4,11 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-const resource = "saisiehrm";
+const the_resource = "saisiehrm";
 
 export async function GET(request: NextRequest) {
   try {
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const protectionError = await protectCreateRoute(request, resource);
+    const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();

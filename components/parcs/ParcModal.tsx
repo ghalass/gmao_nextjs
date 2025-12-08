@@ -65,17 +65,15 @@ export function ParcModal({
     },
   });
 
-  useEffect(() => {
-    if (open) {
-      formik.resetForm();
-      setError(null);
-    }
-  }, [open, parc]);
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
 
   const isSubmitting = createParc.isPending || updateParc.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -153,7 +151,7 @@ export function ParcModal({
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClode}
               disabled={isSubmitting}
             >
               Annuler

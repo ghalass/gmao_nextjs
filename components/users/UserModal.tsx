@@ -44,7 +44,7 @@ export function UserModal({
     email?: string;
     name?: string;
     password?: string;
-    role?: string;
+    roles?: string;
     general?: string;
   }>({});
 
@@ -53,7 +53,8 @@ export function UserModal({
       email: "",
       name: "",
       password: "",
-      role: [] as string[],
+      roles: [] as string[],
+      active: true,
     },
     validationSchema: isEdit ? userUpdateSchema : userCreateSchema,
     onSubmit: async (values) => {
@@ -62,17 +63,29 @@ export function UserModal({
 
       try {
         if (isEdit) {
-          const result = await updateUser.mutateAsync({
+          // Pour l'édition, on envoie toutes les données sauf password si vide
+          const dataToSend: any = {
+            email: values.email,
+            name: values.name,
+            roles: values.roles,
+            active: values.active,
+          };
+
+          // Ajouter le mot de passe seulement s'il n'est pas vide
+          if (values.password && values.password.trim() !== "") {
+            dataToSend.password = values.password;
+          }
+
+          await updateUser.mutateAsync({
             id: user.id,
-            ...values,
+            ...dataToSend,
           });
-          onClose();
-          formik.resetForm();
         } else {
-          const result = await createUser.mutateAsync(values);
-          onClose();
-          formik.resetForm();
+          // Pour la création, on envoie toutes les données
+          await createUser.mutateAsync(values);
         }
+        onClose();
+        formik.resetForm();
       } catch (error: any) {
         console.error("Erreur capturée:", error);
         // Gérer les erreurs backend
@@ -85,7 +98,7 @@ export function UserModal({
     console.log("Erreur reçue dans handleBackendError:", error);
 
     // Récupérer les données d'erreur depuis la réponse
-    const errorData = error?.response?.data;
+    const errorData = error?.response?.data || error?.data;
 
     if (!errorData) {
       // Si pas de données d'erreur structurées, utiliser le message d'erreur
@@ -114,7 +127,7 @@ export function UserModal({
           lowerDetail.includes("rôle") ||
           lowerDetail.includes("role")
         ) {
-          errors.role = detail;
+          errors.roles = detail;
         } else {
           errors.general = detail;
         }
@@ -122,14 +135,14 @@ export function UserModal({
       setBackendErrors(errors);
     }
     // Si c'est une erreur spécifique (email déjà utilisé, etc.)
-    else if (errorData.error) {
-      const errorMessage = errorData.error.toLowerCase();
-      if (errorMessage.includes("email")) {
-        setBackendErrors({ email: errorData.error });
+    else if (errorData.error || errorData.message) {
+      const errorMessage = (errorData.error || errorData.message).toLowerCase();
+      if (errorMessage.includes("email") || errorMessage.includes("utilisé")) {
+        setBackendErrors({ email: errorData.error || errorData.message });
       } else if (errorMessage.includes("utilisateur introuvable")) {
-        setBackendErrors({ general: errorData.error });
+        setBackendErrors({ general: errorData.error || errorData.message });
       } else {
-        setBackendErrors({ general: errorData.error });
+        setBackendErrors({ general: errorData.error || errorData.message });
       }
     }
     // Erreur générique
@@ -142,11 +155,18 @@ export function UserModal({
 
   useEffect(() => {
     if (open && user) {
+      // Correction: user.roles est un tableau direct de Role
+      // Filtrer pour n'inclure que les rôles avec un ID défini
+      const roleIds = (user.roles || [])
+        .map((role) => role.id)
+        .filter((id): id is string => !!id); // Type guard pour filtrer les undefined
+
       formik.setValues({
-        email: user.email,
-        name: user.name,
+        email: user.email || "",
+        name: user.name || "",
         password: "",
-        role: user.roles?.map((ur) => ur.roleId) || [],
+        roles: roleIds,
+        active: user.active !== undefined ? user.active : true,
       });
       setBackendErrors({});
     } else if (open && !user) {
@@ -163,11 +183,11 @@ export function UserModal({
 
   const handleRoleChange = (roleId: string, checked: boolean) => {
     if (checked) {
-      formik.setFieldValue("role", [...formik.values.role, roleId]);
+      formik.setFieldValue("roles", [...formik.values.roles, roleId]);
     } else {
       formik.setFieldValue(
-        "role",
-        formik.values.role.filter((id) => id !== roleId)
+        "roles",
+        formik.values.roles.filter((id) => id !== roleId)
       );
     }
   };
@@ -291,7 +311,32 @@ export function UserModal({
                   {backendErrors.password}
                 </p>
               )}
+              {!isEdit && (
+                <p className="text-xs text-muted-foreground">
+                  Minimum 6 caractères
+                </p>
+              )}
             </div>
+
+            {/* Statut (actif/inactif) */}
+            {isEdit && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="active"
+                  checked={formik.values.active}
+                  onCheckedChange={(checked) =>
+                    formik.setFieldValue("active", checked)
+                  }
+                  disabled={isPending}
+                />
+                <Label
+                  htmlFor="active"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Utilisateur actif
+                </Label>
+              </div>
+            )}
 
             {/* Rôles */}
             <div className="grid gap-2">
@@ -299,35 +344,50 @@ export function UserModal({
                 Rôles <span className="text-destructive">*</span>
               </Label>
               <div className="border rounded-md p-3 space-y-2 max-h-[200px] overflow-y-auto">
-                {roles.map((role) => (
-                  <div key={role.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`role-${role.id}`}
-                      checked={formik.values.role.includes(role.id)}
-                      onCheckedChange={(checked) =>
-                        handleRoleChange(role.id, checked as boolean)
-                      }
-                      disabled={isPending}
-                    />
-                    <Label
-                      htmlFor={`role-${role.id}`}
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      {role.name}
-                      {role.description && (
-                        <span className="text-muted-foreground ml-2">
-                          - {role.description}
-                        </span>
-                      )}
-                    </Label>
-                  </div>
-                ))}
+                {roles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Aucun rôle disponible. Veuillez d'abord créer des rôles.
+                  </p>
+                ) : (
+                  roles
+                    .filter((role) => !!role.id) // Filtrer les rôles sans ID
+                    .map((role) => (
+                      <div
+                        key={role.id}
+                        className="flex items-center space-x-2"
+                      >
+                        <Checkbox
+                          id={`role-${role.id}`}
+                          checked={formik.values.roles.includes(role.id!)}
+                          onCheckedChange={(checked) =>
+                            handleRoleChange(role.id!, checked as boolean)
+                          }
+                          disabled={isPending}
+                        />
+                        <Label
+                          htmlFor={`role-${role.id}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          <div className="font-medium">{role.name}</div>
+                          {role.description && (
+                            <div className="text-xs text-muted-foreground">
+                              {role.description}
+                            </div>
+                          )}
+                        </Label>
+                      </div>
+                    ))
+                )}
               </div>
-              {formik.touched.role && formik.errors.role && (
-                <p className="text-sm text-destructive">{formik.errors.role}</p>
+              {formik.touched.roles && formik.errors.roles && (
+                <p className="text-sm text-destructive">
+                  {formik.errors.roles}
+                </p>
               )}
-              {backendErrors.role && (
-                <p className="text-sm text-destructive">{backendErrors.role}</p>
+              {backendErrors.roles && (
+                <p className="text-sm text-destructive">
+                  {backendErrors.roles}
+                </p>
               )}
             </div>
           </div>
@@ -341,7 +401,16 @@ export function UserModal({
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={
+                isPending ||
+                formik.values.roles.length === 0 ||
+                (!isEdit &&
+                  (!formik.values.password ||
+                    formik.values.password.trim() === ""))
+              }
+            >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isEdit ? "Mettre à jour" : "Créer"}
             </Button>

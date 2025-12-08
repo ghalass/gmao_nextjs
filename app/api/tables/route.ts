@@ -23,7 +23,7 @@ export async function GET() {
           !tableName.startsWith("prisma_") && !tableName.startsWith("_")
       );
 
-    return NextResponse.json({ tables: filteredTables });
+    return NextResponse.json(filteredTables);
   } catch (error) {
     console.error("Error fetching tables:", error);
     return NextResponse.json(

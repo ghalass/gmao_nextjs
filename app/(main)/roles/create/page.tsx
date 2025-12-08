@@ -95,7 +95,7 @@ export default function CreateRolePage() {
   const filteredPermissions = permissionsData.filter(
     (permission: Permission) => {
       const searchLower = searchTerm.toLowerCase();
-      const resourceName = permission.resource?.name || "Autres";
+      const resourceName = permission.resource || "Autres";
       return (
         permission.name.toLowerCase().includes(searchLower) ||
         resourceName.toLowerCase().includes(searchLower) ||
@@ -108,7 +108,7 @@ export default function CreateRolePage() {
 
   // CORRECTION : Grouper par resource.name
   const groupedPermissions = filteredPermissions.reduce((acc, permission) => {
-    const resourceName = permission.resource?.name || "Autres";
+    const resourceName = permission.resource || "Autres";
     if (!acc[resourceName]) {
       acc[resourceName] = [];
     }
@@ -205,7 +205,7 @@ export default function CreateRolePage() {
   const coveredResourcesCount = new Set(
     permissionsData
       .filter((p) => formik.values.permissions.includes(p.id))
-      .map((p) => p.resource?.name || "Autres")
+      .map((p) => p.resource || "Autres")
   ).size;
 
   return (
@@ -437,9 +437,9 @@ export default function CreateRolePage() {
                                   <h3 className="font-semibold text-lg capitalize">
                                     {resourceName}
                                   </h3>
-                                  {resourcePermissions[0]?.resource?.label && (
+                                  {resourcePermissions[0]?.resource && (
                                     <p className="text-sm text-muted-foreground">
-                                      {resourcePermissions[0].resource.label}
+                                      {resourcePermissions[0].resource}
                                     </p>
                                   )}
                                 </div>

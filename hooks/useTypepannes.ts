@@ -26,10 +26,11 @@ export function useTypepannes() {
     queryKey: ["typepannes"],
     queryFn: async (): Promise<Typepanne[]> => {
       const response = await fetch("/api/typepannes");
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des types de panne");
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
@@ -42,13 +43,11 @@ export function useTypepannes() {
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la création");
+        throw new Error(dataRes.message || "Erreur lors de la création");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typepannes"] });
@@ -70,13 +69,11 @@ export function useTypepannes() {
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la modification");
+        throw new Error(dataRes.message || "Erreur lors de modification");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typepannes"] });
@@ -88,11 +85,11 @@ export function useTypepannes() {
       const response = await fetch(`/api/typepannes/${id}`, {
         method: "DELETE",
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la suppression");
+        throw new Error(dataRes.message || "Erreur lors de suppression");
       }
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typepannes"] });

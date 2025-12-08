@@ -14,19 +14,19 @@ interface Context {
   }>;
 }
 
-const resource = "parc";
+const the_resource = "parc";
 
 export async function GET(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID du parc manquant" },
+        { message: "ID du parc manquant" },
         { status: 400 }
       );
     }
@@ -91,14 +91,14 @@ export async function GET(request: NextRequest, context: Context) {
 export async function PUT(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID du parc manquant" },
+        { message: "ID du parc manquant" },
         { status: 400 }
       );
     }
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (duplicateParc) {
       return NextResponse.json(
-        { error: "Un autre parc avec ce nom existe déjà" },
+        { message: "Un autre parc avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -142,7 +142,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (!typeparcExists) {
       return NextResponse.json(
-        { error: "Le type de parc spécifié n'existe pas" },
+        { message: "Le type de parc spécifié n'existe pas" },
         { status: 404 }
       );
     }
@@ -191,14 +191,14 @@ export async function PUT(request: NextRequest, context: Context) {
 export async function PATCH(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID du parc manquant" },
+        { message: "ID du parc manquant" },
         { status: 400 }
       );
     }
@@ -298,14 +298,14 @@ export async function PATCH(request: NextRequest, context: Context) {
 export async function DELETE(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID du parc manquant" },
+        { message: "ID du parc manquant" },
         { status: 400 }
       );
     }

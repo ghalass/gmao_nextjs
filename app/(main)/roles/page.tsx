@@ -55,7 +55,7 @@ export default function RolesPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 🆕 États pour les nouvelles fonctionnalités
+  // États pour les nouvelles fonctionnalités
   const [globalSearch, setGlobalSearch] = useState<string>("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
     name: "",
@@ -66,7 +66,7 @@ export default function RolesPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
-  // 🆕 Références pour garder le focus
+  // Références pour garder le focus
   const columnFilterRefs = useRef<{
     name: HTMLInputElement | null;
     permissions: HTMLInputElement | null;
@@ -87,7 +87,7 @@ export default function RolesPage() {
     setSelectedRole(null);
   };
 
-  // 🆕 Gestion du tri
+  // Gestion du tri
   const handleSort = (field: SortField): void => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -98,12 +98,11 @@ export default function RolesPage() {
     setCurrentPage(1);
   };
 
-  // 🆕 Gestion des filtres de colonnes avec conservation du focus
+  // Gestion des filtres de colonnes avec conservation du focus
   const handleColumnFilter = (
     column: keyof ColumnFilters,
     value: string
   ): void => {
-    // Sauvegarder l'élément actif avant la mise à jour
     const activeElement = document.activeElement as HTMLInputElement;
 
     setColumnFilters((prev) => ({
@@ -112,11 +111,9 @@ export default function RolesPage() {
     }));
     setCurrentPage(1);
 
-    // Restaurer le focus après le re-rendu
     setTimeout(() => {
       if (activeElement && columnFilterRefs.current[column]) {
         columnFilterRefs.current[column]?.focus();
-        // Optionnel: replacer le curseur à la fin du texte
         if (columnFilterRefs.current[column]) {
           const input = columnFilterRefs.current[column] as HTMLInputElement;
           input.setSelectionRange(input.value.length, input.value.length);
@@ -125,7 +122,7 @@ export default function RolesPage() {
     }, 0);
   };
 
-  // 🆕 Réinitialiser tous les filtres
+  // Réinitialiser tous les filtres
   const handleClearFilters = (): void => {
     setGlobalSearch("");
     setColumnFilters({
@@ -135,7 +132,7 @@ export default function RolesPage() {
     setCurrentPage(1);
   };
 
-  // 🆕 Filtrage et tri des données
+  // Filtrage et tri des données
   const filteredAndSortedRoles = useMemo((): Role[] => {
     if (!rolesQuery.data) return [];
 
@@ -144,26 +141,41 @@ export default function RolesPage() {
       const globalMatch =
         globalSearch === "" ||
         role.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        role.description?.toLowerCase().includes(globalSearch.toLowerCase()) ||
         Boolean(
-          role.permissions?.some((rolePermission) =>
-            rolePermission.permission?.name
-              ?.toLowerCase()
-              .includes(globalSearch.toLowerCase())
+          role.permissions?.some(
+            (permission) =>
+              permission.name
+                ?.toLowerCase()
+                .includes(globalSearch.toLowerCase()) ||
+              permission.resource
+                ?.toLowerCase()
+                .includes(globalSearch.toLowerCase()) ||
+              permission.action
+                ?.toLowerCase()
+                .includes(globalSearch.toLowerCase())
           )
         );
 
       // Filtres par colonne
       const nameMatch =
         columnFilters.name === "" ||
-        role.name.toLowerCase().includes(columnFilters.name.toLowerCase());
+        role.name.toLowerCase().includes(columnFilters.name.toLowerCase()) ||
+        role.description
+          ?.toLowerCase()
+          .includes(columnFilters.name.toLowerCase());
 
       const permissionsMatch =
         columnFilters.permissions === "" ||
         Boolean(
-          role.permissions?.some((rolePermission) =>
-            rolePermission.permission?.name
-              ?.toLowerCase()
-              .includes(columnFilters.permissions.toLowerCase())
+          role.permissions?.some(
+            (permission) =>
+              permission.name
+                ?.toLowerCase()
+                .includes(columnFilters.permissions.toLowerCase()) ||
+              permission.resource
+                ?.toLowerCase()
+                .includes(columnFilters.permissions.toLowerCase())
           )
         );
 
@@ -182,8 +194,9 @@ export default function RolesPage() {
           break;
 
         case "permissions":
-          aValue = a.permissions?.[0]?.permission?.name || "";
-          bValue = b.permissions?.[0]?.permission?.name || "";
+          // Trier par le nom de la première permission ou par nombre de permissions
+          aValue = a.permissions?.[0]?.name || "";
+          bValue = b.permissions?.[0]?.name || "";
           break;
         default:
           aValue = a.name;
@@ -203,7 +216,7 @@ export default function RolesPage() {
     return filtered;
   }, [rolesQuery.data, globalSearch, columnFilters, sortField, sortDirection]);
 
-  // 🆕 Pagination améliorée avec option "Tout afficher"
+  // Pagination améliorée avec option "Tout afficher"
   const totalItems: number = filteredAndSortedRoles.length;
   const showAll: boolean = itemsPerPage === -1;
   const totalPages: number = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
@@ -215,23 +228,26 @@ export default function RolesPage() {
   const displayError: string | null =
     error || rolesQuery.error?.message || null;
 
-  // 🆕 Vérifier s'il y a des filtres actifs
+  // Vérifier s'il y a des filtres actifs
   const hasActiveFilters: boolean =
     globalSearch !== "" ||
     Object.values(columnFilters).some((filter) => filter !== "");
 
-  // 🆕 Fonction d'export Excel
+  // Fonction d'export Excel
   const handleExportToExcel = (): void => {
     try {
       // Préparer les données pour l'export
       const exportData = filteredAndSortedRoles.map((role: Role) => ({
         Nom: role.name,
-        Permissions:
-          role.permissions?.map((rp) => rp.permission?.name).join(", ") || "",
+        Description: role.description || "",
         "Nombre de permissions": role.permissions?.length || 0,
+        Permissions:
+          role.permissions
+            ?.map((p) => `${p.name} (${p.resource} - ${p.action || "tous"})`)
+            .join(", ") || "",
       }));
 
-      // Convertir en CSV (format simple compatible avec Excel)
+      // Convertir en CSV
       const headers = Object.keys(exportData[0] || {}).join(";");
       const csvData = exportData
         .map((row) =>
@@ -263,7 +279,7 @@ export default function RolesPage() {
     }
   };
 
-  // 🆕 Composant d'en-tête de colonne avec tri amélioré
+  // Composant d'en-tête de colonne avec tri amélioré
   const SortableHeader = ({
     field,
     children,
@@ -318,7 +334,7 @@ export default function RolesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* 🆕 Bouton d'export Excel */}
+          {/* Bouton d'export Excel */}
           <Button
             variant="outline"
             onClick={handleExportToExcel}
@@ -344,13 +360,13 @@ export default function RolesPage() {
         </Alert>
       )}
 
-      {/* 🆕 Barre de recherche globale améliorée */}
+      {/* Barre de recherche globale améliorée */}
       <div className="mb-6 space-y-3">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher par nom ou permissions..."
+              placeholder="Rechercher par nom, description ou permissions..."
               value={globalSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setGlobalSearch(e.target.value);
@@ -394,7 +410,7 @@ export default function RolesPage() {
         )}
       </div>
 
-      {/* 🆕 Contrôles de pagination en haut améliorés */}
+      {/* Contrôles de pagination en haut améliorés */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -431,7 +447,7 @@ export default function RolesPage() {
           </span>
         </div>
 
-        {/* 🆕 Info d'export */}
+        {/* Info d'export */}
         {filteredAndSortedRoles.length > 0 && (
           <div className="text-sm text-muted-foreground">
             {filteredAndSortedRoles.length} ligne(s) exportable(s)
@@ -443,6 +459,7 @@ export default function RolesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableCell className="w-12">#</TableCell>
               <SortableHeader field="name">
                 <div className="space-y-2">
                   <div className="font-medium">Nom</div>
@@ -467,6 +484,12 @@ export default function RolesPage() {
                   />
                 </div>
               </SortableHeader>
+
+              <TableCell>
+                <div className="space-y-2">
+                  <div className="font-medium">Description</div>
+                </div>
+              </TableCell>
 
               <SortableHeader field="permissions">
                 <div className="space-y-2">
@@ -502,7 +525,7 @@ export default function RolesPage() {
             {paginatedRoles.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-10 text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -527,8 +550,11 @@ export default function RolesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedRoles.map((role: Role) => (
+              paginatedRoles.map((role: Role, index: number) => (
                 <TableRow key={role.id} className="hover:bg-muted/50">
+                  <TableCell className="text-muted-foreground">
+                    {startIndex + index + 1}
+                  </TableCell>
                   <TableCell className="font-medium">
                     <Link
                       href={`/roles/${role.id}/edit`}
@@ -539,17 +565,27 @@ export default function RolesPage() {
                   </TableCell>
 
                   <TableCell>
+                    <div className="max-w-xs truncate">
+                      {role.description || (
+                        <span className="text-muted-foreground/50 text-sm">
+                          Aucune description
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
                     <div className="flex gap-1 flex-wrap">
-                      {role.permissions?.slice(0, 3).map((rolePermission) => (
+                      {role.permissions?.slice(0, 3).map((permission, key) => (
                         <Badge
-                          key={
-                            rolePermission.permissionId ||
-                            rolePermission.permission?.id
-                          }
+                          key={key}
                           variant="outline"
                           className="text-xs"
+                          title={`${permission.name} (${
+                            permission.resource
+                          } - ${permission.action || "tous"})`}
                         >
-                          {rolePermission.permission?.name}
+                          {permission.name}
                         </Badge>
                       ))}
                       {role.permissions && role.permissions.length > 3 && (
@@ -601,7 +637,7 @@ export default function RolesPage() {
         </Table>
       </div>
 
-      {/* 🆕 Pagination en bas améliorée */}
+      {/* Pagination en bas améliorée */}
       {!showAll && totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
           <div className="text-sm text-muted-foreground">

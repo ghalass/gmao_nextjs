@@ -41,6 +41,9 @@ import { Engin } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
 import { exportExcel } from "@/lib/xlsxFn";
+import { useParcs } from "@/hooks/useParcs";
+import { useSites } from "@/hooks/useSites";
+import { useTypeparcs } from "@/hooks/useTypeparcs";
 
 type SortField = "name" | "parc" | "site" | "status";
 type SortDirection = "asc" | "desc";
@@ -53,15 +56,11 @@ interface ColumnFilters {
 }
 
 export default function EnginsPage() {
-  const {
-    enginsQuery,
-    parcsQuery,
-    sitesQuery,
-    createEngin,
-    updateEngin,
-    deleteEngin,
-    typeparcsQuery,
-  } = useEngins();
+  const { enginsQuery, createEngin, updateEngin, deleteEngin } = useEngins();
+
+  const { parcsQuery } = useParcs();
+  const { sitesQuery } = useSites();
+  const { typeparcsQuery } = useTypeparcs();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);

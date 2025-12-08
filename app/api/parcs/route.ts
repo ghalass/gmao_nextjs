@@ -4,12 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { parcSchema } from "@/lib/validations/parcSchema";
 import { protectReadRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
 
-const resource = "parc";
+const the_resource = "parc";
 
 export async function GET(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const parcs = await prisma.parc.findMany({
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const body = await request.json();
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (existingParc) {
       return NextResponse.json(
-        { error: "Un parc avec ce nom existe déjà" },
+        { message: "Un parc avec ce nom existe déjà" },
         { status: 409 }
       );
     }

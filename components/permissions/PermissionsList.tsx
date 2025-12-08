@@ -96,7 +96,7 @@ export function PermissionsList({
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
-                      {permission.resource.name}
+                      {permission.resource}
                     </Badge>
                   </TableCell>
                   <TableCell>

@@ -4,12 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-const resource = "saisiehrm";
+const the_resource = "saisiehrm";
 
 export async function GET(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectCreateRoute(request, resource);
+    const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     if (existingSaisie) {
       return NextResponse.json(
-        { error: "Une saisie existe déjà pour cette date et cet engin" },
+        { message: "Une saisie existe déjà pour cette date et cet engin" },
         { status: 400 }
       );
     }

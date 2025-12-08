@@ -44,8 +44,13 @@ export function DeleteTypepanneModal({
 
   const isLoading = deleteTypepanne.isPending;
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -103,7 +108,7 @@ export function DeleteTypepanneModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClode}
             disabled={isLoading}
           >
             Annuler

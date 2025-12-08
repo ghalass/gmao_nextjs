@@ -12,32 +12,47 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, AlertTriangle } from "lucide-react";
-import { type Site } from "@/hooks/useSites";
+import { toast } from "sonner";
+import { Site } from "@/lib/types";
+import { useState } from "react";
 
 interface DeleteSiteModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
-  site: Site | null; // ✅ Peut être null
-  isDeleting: boolean;
+  site: Site | null;
+  deleteSite: any;
 }
 export function DeleteSiteModal({
   open,
   onClose,
-  onConfirm,
   site,
-  isDeleting,
+  deleteSite,
 }: DeleteSiteModalProps) {
-  const handleConfirm = async (): Promise<void> => {
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!site) return;
+
+    setError(null);
     try {
-      await onConfirm();
-    } catch (error) {
-      // L'erreur est gérée par le parent
+      await deleteSite.mutateAsync(site.id);
+      onClose();
+    } catch (error: any) {
+      setError(
+        error.message || "Une erreur est survenue lors de la suppression"
+      );
     }
   };
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
+  const isSubmitting = deleteSite.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent
         className="sm:max-w-md"
         onInteractOutside={(e) => e.preventDefault()}
@@ -48,10 +63,25 @@ export function DeleteSiteModal({
             <DialogTitle>Supprimer le site</DialogTitle>
           </div>
           <DialogDescription>
-            Êtes-vous sûr de vouloir supprimer ce site ? Cette action est
+            Êtes-vous sûr de vouloir supprimer le site{" "}
+            <strong>&quot;{site?.name}&quot;</strong> ? Cette action est
             irréversible.
+            {site?._count?.engins && site?._count?.engins > 0 && (
+              <span className="block mt-2 text-destructive font-medium">
+                Attention : Ce site contient {site?._count?.engins} engin(s). La
+                suppression pourrait affecter ces engins.
+              </span>
+            )}
           </DialogDescription>
+          {/* <p>{JSON.stringify(site)}</p> */}
         </DialogHeader>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-4">
           <Alert variant="destructive">
@@ -73,18 +103,18 @@ export function DeleteSiteModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
-            disabled={isDeleting}
+            onClick={handleClode}
+            disabled={isSubmitting}
           >
             Annuler
           </Button>
           <Button
             type="button"
             variant="destructive"
-            onClick={handleConfirm}
-            disabled={isDeleting}
+            onClick={handleDelete}
+            disabled={isSubmitting}
           >
-            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Supprimer
           </Button>
         </DialogFooter>

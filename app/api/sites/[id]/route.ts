@@ -7,14 +7,14 @@ import {
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
 
-const resource = "site";
+const the_resource = "site";
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -49,7 +49,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -119,7 +119,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;

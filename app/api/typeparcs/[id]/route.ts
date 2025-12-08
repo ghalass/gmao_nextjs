@@ -8,7 +8,7 @@ import {
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
 
-const resource = "typeparc";
+const the_resource = "typeparc";
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function GET(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -34,7 +34,7 @@ export async function GET(
 
     if (!typeparc) {
       return NextResponse.json(
-        { error: "Type de parc non trouvé" },
+        { message: "Type de parc non trouvé" },
         { status: 404 }
       );
     }
@@ -55,7 +55,7 @@ export async function PUT(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -74,7 +74,7 @@ export async function PUT(
 
     if (!existingTypeparc) {
       return NextResponse.json(
-        { error: "Type de parc non trouvé" },
+        { message: "Type de parc non trouvé" },
         { status: 404 }
       );
     }
@@ -89,7 +89,7 @@ export async function PUT(
 
     if (duplicateTypeparc) {
       return NextResponse.json(
-        { error: "Un autre type de parc avec ce nom existe déjà" },
+        { message: "Un autre type de parc avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -134,7 +134,7 @@ export async function PATCH(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -153,7 +153,7 @@ export async function PATCH(
 
     if (!existingTypeparc) {
       return NextResponse.json(
-        { error: "Type de parc non trouvé" },
+        { message: "Type de parc non trouvé" },
         { status: 404 }
       );
     }
@@ -214,6 +214,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Vérifier la permission de lecture des sites (pas "users")
+    const protectionError = await protectDeleteRoute(request, the_resource);
+    if (protectionError) return protectionError;
+
     const { id } = await context.params;
 
     // Vérifier si le type de parc existe
@@ -230,7 +234,7 @@ export async function DELETE(
 
     if (!existingTypeparc) {
       return NextResponse.json(
-        { error: "Type de parc non trouvé" },
+        { message: "Type de parc non trouvé" },
         { status: 404 }
       );
     }

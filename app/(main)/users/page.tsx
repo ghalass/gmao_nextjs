@@ -34,6 +34,9 @@ import {
   Filter,
   X,
   Download,
+  Mail,
+  UserCircle,
+  Shield,
 } from "lucide-react";
 import { UserModal } from "@/components/users/UserModal";
 import { DeleteUserModal } from "@/components/users/DeleteUserModal";
@@ -58,7 +61,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 🆕 États pour les nouvelles fonctionnalités
+  // États pour les nouvelles fonctionnalités
   const [globalSearch, setGlobalSearch] = useState<string>("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
     name: "",
@@ -70,7 +73,7 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
-  // 🆕 Références pour garder le focus
+  // Références pour garder le focus
   const columnFilterRefs = useRef<{
     name: HTMLInputElement | null;
     email: HTMLInputElement | null;
@@ -111,7 +114,7 @@ export default function UsersPage() {
     setSelectedUser(null);
   };
 
-  // 🆕 Gestion du tri
+  // Gestion du tri
   const handleSort = (field: SortField): void => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -122,12 +125,11 @@ export default function UsersPage() {
     setCurrentPage(1);
   };
 
-  // 🆕 Gestion des filtres de colonnes avec conservation du focus
+  // Gestion des filtres de colonnes avec conservation du focus
   const handleColumnFilter = (
     column: keyof ColumnFilters,
     value: string
   ): void => {
-    // Sauvegarder l'élément actif avant la mise à jour
     const activeElement = document.activeElement as HTMLInputElement;
 
     setColumnFilters((prev) => ({
@@ -136,11 +138,9 @@ export default function UsersPage() {
     }));
     setCurrentPage(1);
 
-    // Restaurer le focus après le re-rendu
     setTimeout(() => {
       if (activeElement && columnFilterRefs.current[column]) {
         columnFilterRefs.current[column]?.focus();
-        // Optionnel: replacer le curseur à la fin du texte
         if (columnFilterRefs.current[column]) {
           const input = columnFilterRefs.current[column] as HTMLInputElement;
           input.setSelectionRange(input.value.length, input.value.length);
@@ -149,7 +149,7 @@ export default function UsersPage() {
     }, 0);
   };
 
-  // 🆕 Réinitialiser tous les filtres
+  // Réinitialiser tous les filtres
   const handleClearFilters = (): void => {
     setGlobalSearch("");
     setColumnFilters({
@@ -160,21 +160,32 @@ export default function UsersPage() {
     setCurrentPage(1);
   };
 
-  // 🆕 Filtrage et tri des données
+  // Filtrage et tri des données
   const filteredAndSortedUsers = useMemo((): User[] => {
     if (!usersQuery.data) return [];
 
-    const usersData = usersQuery.data as unknown as User[];
+    // Correction: usersQuery.data est déjà un tableau de User
+    const usersData: any[] = Array.isArray(usersQuery.data)
+      ? usersQuery.data
+      : [];
+
     const filtered = usersData.filter((user: User) => {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
         user.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
         user.email.toLowerCase().includes(globalSearch.toLowerCase()) ||
+        (user.active !== undefined &&
+          (user.active ? "actif" : "inactif").includes(
+            globalSearch.toLowerCase()
+          )) ||
         Boolean(
-          user.roles?.some((role) =>
-            role.role?.name?.toLowerCase().includes(globalSearch.toLowerCase())
-          )
+          user?.roles?.some((userRole) => {
+            // Accéder au nom via la relation role
+            const roleName =
+              userRole.role?.name || userRole.name || userRole.roleName || "";
+            return roleName.toLowerCase().includes(globalSearch.toLowerCase());
+          })
         );
 
       // Filtres par colonne
@@ -187,11 +198,13 @@ export default function UsersPage() {
       const rolesMatch =
         columnFilters.roles === "" ||
         Boolean(
-          user.roles?.some((role) =>
-            role.role?.name
-              ?.toLowerCase()
-              .includes(columnFilters.roles.toLowerCase())
-          )
+          user.roles?.some((userRole) => {
+            const roleName =
+              userRole.role?.name || userRole.name || userRole.roleName || "";
+            return roleName
+              .toLowerCase()
+              .includes(columnFilters.roles.toLowerCase());
+          })
         );
 
       return Boolean(globalMatch && nameMatch && emailMatch && rolesMatch);
@@ -199,8 +212,8 @@ export default function UsersPage() {
 
     // Tri
     filtered.sort((a: User, b: User) => {
-      let aValue: string | number;
-      let bValue: string | number;
+      let aValue: string | number | Date = "";
+      let bValue: string | number | Date = "";
 
       switch (sortField) {
         case "name":
@@ -213,8 +226,8 @@ export default function UsersPage() {
           break;
 
         case "roles":
-          aValue = a.roles?.[0]?.role?.name || "";
-          bValue = b.roles?.[0]?.role?.name || "";
+          aValue = a.roles?.[0]?.name || "";
+          bValue = b.roles?.[0]?.name || "";
           break;
         default:
           aValue = a.name;
@@ -232,7 +245,7 @@ export default function UsersPage() {
     return filtered;
   }, [usersQuery.data, globalSearch, columnFilters, sortField, sortDirection]);
 
-  // 🆕 Pagination améliorée avec option "Tout afficher"
+  // Pagination améliorée avec option "Tout afficher"
   const totalItems: number = filteredAndSortedUsers.length;
   const showAll: boolean = itemsPerPage === -1;
   const totalPages: number = showAll ? 1 : Math.ceil(totalItems / itemsPerPage);
@@ -244,22 +257,23 @@ export default function UsersPage() {
   const displayError: string | null =
     error || usersQuery.error?.message || null;
 
-  // 🆕 Vérifier s'il y a des filtres actifs
+  // Vérifier s'il y a des filtres actifs
   const hasActiveFilters: boolean =
     globalSearch !== "" ||
     Object.values(columnFilters).some((filter) => filter !== "");
 
-  // 🆕 Fonction d'export Excel
+  // Fonction d'export Excel
   const handleExportToExcel = (): void => {
     try {
       // Préparer les données pour l'export
       const exportData = filteredAndSortedUsers.map((user: User) => ({
         Nom: user.name,
         Email: user.email,
-        Rôles: user.roles?.map((role) => role.role?.name).join(", ") || "",
+        Statut: user.active ? "Actif" : "Inactif",
+        Rôles: user.roles?.map((role) => role.name).join(", "),
       }));
 
-      // Convertir en CSV (format simple compatible avec Excel)
+      // Convertir en CSV
       const headers = Object.keys(exportData[0] || {}).join(";");
       const csvData = exportData
         .map((row) =>
@@ -291,7 +305,7 @@ export default function UsersPage() {
     }
   };
 
-  // 🆕 Composant d'en-tête de colonne avec tri amélioré
+  // Composant d'en-tête de colonne avec tri amélioré
   const SortableHeader = ({
     field,
     children,
@@ -346,7 +360,7 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* 🆕 Bouton d'export Excel */}
+          {/* Bouton d'export Excel */}
           <Button
             variant="outline"
             onClick={handleExportToExcel}
@@ -370,13 +384,13 @@ export default function UsersPage() {
         </Alert>
       )}
 
-      {/* 🆕 Barre de recherche globale améliorée */}
+      {/* Barre de recherche globale améliorée */}
       <div className="mb-6 space-y-3">
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher dans tous les champs..."
+              placeholder="Rechercher par nom, email, rôles ou statut..."
               value={globalSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setGlobalSearch(e.target.value);
@@ -420,7 +434,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* 🆕 Contrôles de pagination en haut améliorés */}
+      {/* Contrôles de pagination en haut améliorés */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -457,7 +471,7 @@ export default function UsersPage() {
           </span>
         </div>
 
-        {/* 🆕 Info d'export */}
+        {/* Info d'export */}
         {filteredAndSortedUsers.length > 0 && (
           <div className="text-sm text-muted-foreground">
             {filteredAndSortedUsers.length} ligne(s) exportable(s)
@@ -469,9 +483,13 @@ export default function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableCell className="w-12">#</TableCell>
               <SortableHeader field="name">
                 <div className="space-y-2">
-                  <div className="font-medium">Nom</div>
+                  <div className="font-medium flex items-center gap-1">
+                    <UserCircle className="h-3.5 w-3.5" />
+                    Nom
+                  </div>
                   <Input
                     ref={(el: HTMLInputElement | null) => {
                       columnFilterRefs.current.name = el;
@@ -485,7 +503,6 @@ export default function UsersPage() {
                     onClick={(e: React.MouseEvent<HTMLInputElement>) =>
                       e.stopPropagation()
                     }
-                    // 🆕 AJOUTER: Empêcher le re-rendu prématuré
                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -497,7 +514,10 @@ export default function UsersPage() {
 
               <SortableHeader field="email">
                 <div className="space-y-2">
-                  <div className="font-medium">Email</div>
+                  <div className="font-medium flex items-center gap-1">
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </div>
                   <Input
                     ref={(el: HTMLInputElement | null) => {
                       columnFilterRefs.current.email = el;
@@ -511,7 +531,6 @@ export default function UsersPage() {
                     onClick={(e: React.MouseEvent<HTMLInputElement>) =>
                       e.stopPropagation()
                     }
-                    // 🆕 AJOUTER: Empêcher le re-rendu prématuré
                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -521,9 +540,18 @@ export default function UsersPage() {
                 </div>
               </SortableHeader>
 
+              <TableCell>
+                <div className="space-y-2">
+                  <div className="font-medium">Statut</div>
+                </div>
+              </TableCell>
+
               <SortableHeader field="roles">
                 <div className="space-y-2">
-                  <div className="font-medium">Rôles</div>
+                  <div className="font-medium flex items-center gap-1">
+                    <Shield className="h-3.5 w-3.5" />
+                    Rôles
+                  </div>
                   <Input
                     ref={(el: HTMLInputElement | null) => {
                       columnFilterRefs.current.roles = el;
@@ -537,7 +565,6 @@ export default function UsersPage() {
                     onClick={(e: React.MouseEvent<HTMLInputElement>) =>
                       e.stopPropagation()
                     }
-                    // 🆕 AJOUTER: Empêcher le re-rendu prématuré
                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -556,7 +583,7 @@ export default function UsersPage() {
             {paginatedUsers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-10 text-muted-foreground"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -581,26 +608,47 @@ export default function UsersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedUsers.map((user: User) => (
+              paginatedUsers.map((user: User, index: number) => (
                 <TableRow key={user.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {startIndex + index + 1}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">{user.name}</div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {user.email}
                   </TableCell>
                   <TableCell>
+                    <Badge
+                      variant={user.active ? "default" : "secondary"}
+                      className={
+                        user.active
+                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                      }
+                    >
+                      {user.active ? "Actif" : "Inactif"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-1 flex-wrap">
-                      {user.roles?.map((userRole, index) => (
+                      {user.roles?.map((role, index) => (
                         <Badge
                           key={index}
-                          variant="secondary"
+                          variant="outline"
                           className="text-xs"
                         >
-                          {userRole.role?.name}
+                          {role.name}
                         </Badge>
                       ))}
+                      {(!user.roles || user.roles.length === 0) && (
+                        <span className="text-muted-foreground/50 text-xs">
+                          Aucun rôle
+                        </span>
+                      )}
                     </div>
                   </TableCell>
-
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
@@ -608,6 +656,7 @@ export default function UsersPage() {
                         size="sm"
                         onClick={() => handleEdit(user)}
                         className="h-8 w-8 p-0"
+                        disabled={updateUser.isPending}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -616,8 +665,14 @@ export default function UsersPage() {
                         size="sm"
                         onClick={() => handleDelete(user)}
                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        disabled={deleteUser.isPending}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {deleteUser.isPending &&
+                        selectedUser?.id === user.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>
@@ -628,7 +683,7 @@ export default function UsersPage() {
         </Table>
       </div>
 
-      {/* 🆕 Pagination en bas améliorée */}
+      {/* Pagination en bas améliorée */}
       {!showAll && totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
           <div className="text-sm text-muted-foreground">

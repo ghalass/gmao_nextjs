@@ -41,6 +41,7 @@ import { Parc } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from "xlsx";
 import { exportExcel } from "@/lib/xlsxFn";
+import { useTypeparcs } from "@/hooks/useTypeparcs";
 
 type SortField = "name" | "typeparc" | "enginsCount" | "createdAt";
 type SortDirection = "asc" | "desc";
@@ -51,8 +52,9 @@ interface ColumnFilters {
 }
 
 export default function ParcsPage() {
-  const { parcsQuery, typeparcsQuery, createParc, updateParc, deleteParc } =
-    useParcs();
+  const { parcsQuery, createParc, updateParc, deleteParc } = useParcs();
+
+  const { typeparcsQuery } = useTypeparcs();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);

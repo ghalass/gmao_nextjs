@@ -3,6 +3,7 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
+import { UserDetail } from "@/lib/types";
 import Link from "next/link";
 import { User } from "lucide-react";
 import {
@@ -39,24 +40,34 @@ export default function AuthButtons() {
     );
   }
 
-  // Vérification sécurisée pour les roles
-  // Selon votre nouveau schéma, user.roles est un tableau direct de Role
-  // OU selon l'API register/login, user.roleNames est un tableau de noms de rôles
-  const userRoles = user.roles || [];
-  const roleNames = user.roleNames || []; // Nouvelles propriétés de l'API
+  // Type assertion pour plus de sécurité
+  const userDetail = user as UserDetail;
 
-  // Extraire les noms de rôles selon la structure
+  // Vérification sécurisée pour les roles
+  // Avec le nouveau type UserDetail, nous avons plusieurs options:
+  const userRoles = userDetail.roles || [];
+  const roleNames = userDetail.roleNames || [];
+  const userPermissions = userDetail.permissions || [];
+
+  // Extraire les noms de rôles selon la structure disponible
   let displayRoleNames: string;
 
   if (roleNames.length > 0) {
-    // Utiliser user.roleNames si disponible (nouvelle API)
+    // Utiliser user.roleNames si disponible (la propriété principale)
     displayRoleNames = roleNames.join(", ");
-  } else if (userRoles.length > 0 && userRoles[0].name) {
-    // Si user.roles existe et a des objets avec .name (structure directe)
-    displayRoleNames = userRoles.map((r: any) => r.name).join(", ");
-  } else if (userRoles.length > 0 && userRoles[0].role?.name) {
-    // Ancienne structure imbriquée (compatibilité)
-    displayRoleNames = userRoles.map((r: any) => r.role?.name).join(", ");
+  } else if (userRoles.length > 0) {
+    // Extraire les noms des objets Role
+    displayRoleNames = userRoles
+      .map((role) => {
+        // Role peut être un objet avec une propriété 'name'
+        if (typeof role === "object" && role !== null && "name" in role) {
+          return (role as { name: string }).name;
+        }
+        // Ou Role peut être une chaîne (selon votre structure réelle)
+        return typeof role === "string" ? role : "";
+      })
+      .filter(Boolean)
+      .join(", ");
   } else {
     displayRoleNames = "";
   }
@@ -67,13 +78,13 @@ export default function AuthButtons() {
         <DropdownMenuTrigger asChild>
           <button className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-accent transition-colors duration-200 group">
             <div className="w-8 h-8 bg-linear-to-br from-primary to-primary/70 rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
-              {user.name?.charAt(0).toUpperCase() || (
+              {userDetail.name?.charAt(0).toUpperCase() || (
                 <User className="w-4 h-4" />
               )}
             </div>
             <div className="hidden sm:block text-left">
               <div className="text-sm font-medium text-foreground">
-                {user.name}
+                {userDetail.name}
               </div>
               <div className="text-xs text-muted-foreground">
                 {displayRoleNames ? (
@@ -90,10 +101,20 @@ export default function AuthButtons() {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium">{user.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">
-                {displayRoleNames || "Aucun rôle"}
+              <p className="text-sm font-medium">{userDetail.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {userDetail.email}
               </p>
+              {displayRoleNames && (
+                <p className="text-xs text-muted-foreground capitalize">
+                  Rôles: {displayRoleNames}
+                </p>
+              )}
+              {userPermissions.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {userPermissions.length} permission(s)
+                </p>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -106,6 +127,19 @@ export default function AuthButtons() {
               <span>Mon profil</span>
             </Link>
           </DropdownMenuItem>
+          {userDetail.roleNames?.includes("admin") && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/admin"
+                  className="cursor-pointer flex items-center gap-2"
+                >
+                  <span>Administration</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             asChild

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
 
-const resource = "site";
+const the_resource = "site";
 
 export async function PUT(
   request: NextRequest,
@@ -12,7 +12,7 @@ export async function PUT(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();
@@ -37,7 +37,9 @@ export async function PUT(
 
     if (existingSaisie) {
       return NextResponse.json(
-        { error: "Une autre saisie existe déjà pour cette date et cet engin" },
+        {
+          message: "Une autre saisie existe déjà pour cette date et cet engin",
+        },
         { status: 400 }
       );
     }
@@ -80,7 +82,7 @@ export async function DELETE(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const session = await getSession();

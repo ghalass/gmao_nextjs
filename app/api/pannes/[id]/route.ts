@@ -11,19 +11,19 @@ interface Context {
   params: Promise<{ id: string }>;
 }
 
-const resource = "panne";
+const the_resource = "panne";
 
 export async function GET(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de la panne manquant" },
+        { message: "ID de la panne manquant" },
         { status: 400 }
       );
     }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, context: Context) {
       where: { id },
       include: {
         typepanne: true,
-        // CORRECTION : Utiliser le nom correct de la relation
+        // CORRECTION : Utiliser le nom correct de la relation avec majuscule
         saisiehim: {
           include: {
             engin: {
@@ -58,7 +58,6 @@ export async function GET(request: NextRequest, context: Context) {
         },
       },
     });
-
     if (!panne) {
       return NextResponse.json({ error: "Panne non trouvée" }, { status: 404 });
     }
@@ -76,14 +75,14 @@ export async function GET(request: NextRequest, context: Context) {
 export async function PUT(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de la panne manquant" },
+        { message: "ID de la panne manquant" },
         { status: 400 }
       );
     }
@@ -102,14 +101,14 @@ export async function PUT(request: NextRequest, context: Context) {
     // Valider les données
     if (!body.name || body.name.trim().length < 2) {
       return NextResponse.json(
-        { error: "Le nom doit contenir au moins 2 caractères" },
+        { message: "Le nom doit contenir au moins 2 caractères" },
         { status: 400 }
       );
     }
 
     if (!body.typepanneId) {
       return NextResponse.json(
-        { error: "Le type de panne est requis" },
+        { message: "Le type de panne est requis" },
         { status: 400 }
       );
     }
@@ -121,7 +120,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     if (!typepanneExists) {
       return NextResponse.json(
-        { error: "Le type de panne spécifié n'existe pas" },
+        { message: "Le type de panne spécifié n'existe pas" },
         { status: 404 }
       );
     }
@@ -172,7 +171,7 @@ export async function PUT(request: NextRequest, context: Context) {
     // Gérer les erreurs spécifiques de Prisma
     if (error instanceof Error && error.message.includes("Unique constraint")) {
       return NextResponse.json(
-        { error: "Une panne avec ce nom existe déjà" },
+        { message: "Une panne avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -187,14 +186,14 @@ export async function PUT(request: NextRequest, context: Context) {
 export async function DELETE(request: NextRequest, context: Context) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
-        { error: "ID de la panne manquant" },
+        { message: "ID de la panne manquant" },
         { status: 400 }
       );
     }

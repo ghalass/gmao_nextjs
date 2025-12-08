@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (!body) {
       return NextResponse.json(
-        { error: "Le corps de la requête ne doit pas être vide" },
+        { message: "Le corps de la requête ne doit pas être vide" },
         { status: 400 }
       );
     }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       await loginSchema.validate(parsedBody, { abortEarly: false });
     } catch (err: any) {
       return NextResponse.json(
-        { error: "Erreur de validation", details: err.errors },
+        { message: "Erreur de validation", details: err.errors },
         { status: 400 }
       );
     }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Email ou mot de passe incorrect!" },
+        { message: "Email ou mot de passe incorrect!" },
         { status: 401 }
       );
     }
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       return NextResponse.json(
-        { error: "Email ou mot de passe incorrect!" },
+        { message: "Email ou mot de passe incorrect!" },
         { status: 401 }
       );
     }

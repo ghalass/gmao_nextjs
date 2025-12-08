@@ -38,11 +38,11 @@ export enum StatutEngin {
 
 // ============ MODELS DE BASE ============
 export interface User {
-  id: string;
+  id?: string;
   name: string;
   email: string;
-  password: string;
-  active: boolean;
+  password?: string;
+  active?: boolean;
 
   roles?: UserRole[];
 }
@@ -63,23 +63,25 @@ export interface Role {
   updatedAt?: string; // Date en string
   permissions?: Array<{
     id: string;
-    roleId: string;
-    permissionId: string;
-    permission?: {
-      id: string;
-      name: string;
-      description?: string;
-      action: string;
-      resourceId: string;
-    };
+    name: string;
+    description: string;
+    resource: string;
+    action: string;
   }>;
+  user?: [];
 }
 
 export interface UserRole {
+  id?: string;
   userId: string;
   roleId: string;
   user?: User;
   role?: Role;
+
+  // Ajouter ces propriétés si elles existent dans votre modèle
+  // (selon votre schéma de base de données)
+  name?: string; // Si le nom est stocké directement dans UserRole
+  roleName?: string; // Alternative: nom dédié
 }
 
 export interface RolePermission {
@@ -99,6 +101,11 @@ export interface Site {
   saisiehrm?: Saisiehrm[];
   objectif?: Objectif[];
   anomalies?: Anomalie[];
+
+  // Count pour les agrégations
+  _count?: {
+    engins?: number;
+  };
 }
 
 export interface Typeparc {
@@ -402,4 +409,38 @@ export interface RoleUpdateDto {
   name?: string;
   description?: string;
   permissions?: string[];
+}
+
+// ============ TYPES POUR LES FILTRES UTILISATEURS ============
+export interface UserFilter {
+  name?: string;
+  email?: string;
+  active?: boolean;
+  role?: string;
+  search?: string;
+}
+
+// ============ TYPES POUR LES TABLEAUX ============
+export interface ColumnFilters {
+  name: string;
+  email: string;
+  roles: string;
+}
+
+// ============ TYPES POUR LES FONCTIONS DE FILTRE ============
+export interface FilterOptions {
+  globalSearch: string;
+  columnFilters: ColumnFilters;
+}
+
+export interface UserDetail {
+  id: string;
+  name: string;
+  email: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  roles: Role[];
+  permissions: Permission[];
+  roleNames: string[];
 }

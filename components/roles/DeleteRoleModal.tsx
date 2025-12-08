@@ -12,6 +12,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 import { Role } from "@/lib/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
 
 interface DeleteRoleModalProps {
   open: boolean;
@@ -37,11 +46,11 @@ export function DeleteRoleModal({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Êtes-vous absolument sûr ?</DialogTitle>
+          <DialogDescription>
             Cette action est irréversible. Cela supprimera définitivement le
             rôle{" "}
             <span className="font-semibold text-foreground">{role?.name}</span>{" "}
@@ -51,24 +60,31 @@ export function DeleteRoleModal({
                 Description : {role.description}
               </span>
             )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteRole.isPending}>
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter className="flex space-x-2 sm:space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={deleteRole.isPending}
+          >
             Annuler
-          </AlertDialogCancel>
-          <AlertDialogAction
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
             onClick={handleDelete}
             disabled={deleteRole.isPending}
-            className="bg-destructive hover:bg-destructive/90"
           >
             {deleteRole.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             Supprimer
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

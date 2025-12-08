@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
-const the_resource = "permissions";
+const the_resource = "permission";
 
 export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
-    const permissions = await prisma.permission.findMany({
-      // Pas de include car il n'y a pas de relation resource
-    });
+    const permissions = await prisma.permission.findMany();
 
     return NextResponse.json(permissions);
   } catch (error) {
@@ -29,21 +27,23 @@ export async function POST(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const body = await request.json();
-    const { resource, action } = body; // ← Changez resourceId en resource
+    const { name, resource, action, description } = body;
 
     // Validation des données
-    if (!resource || !action) {
-      // ← resource, pas resourceId
+    if (!name || !resource || !action) {
       return NextResponse.json(
         { message: "Le nom, la ressource et l'action sont requis" },
         { status: 400 }
       );
     }
 
+    // ✅ CORRECTION : Utiliser resource directement
     const permission = await prisma.permission.create({
       data: {
-        resource, // ← C'est un string, pas un ID
+        name,
+        resource,
         action,
+        description,
       },
     });
 
@@ -69,6 +69,14 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+      }
+
+      // ✅ Gestion spécifique de l'erreur de clé étrangère
+      if (error.message.includes("Foreign key constraint")) {
+        return NextResponse.json(
+          { message: "La ressource spécifiée n'existe pas" },
+          { status: 400 }
+        );
       }
     }
 

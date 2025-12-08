@@ -124,22 +124,6 @@ export default function SitesPage() {
     }
   };
 
-  const handleDeleteConfirm = async (): Promise<void> => {
-    if (!selectedSite) return;
-
-    try {
-      await deleteSite.mutateAsync(selectedSite.id);
-      setError(null);
-      handleCloseDeleteModal();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Erreur lors de la suppression";
-      setError(errorMessage);
-    }
-  };
-
   // 🆕 Gestion du tri
   const handleSort = (field: SortField): void => {
     if (sortField === field) {
@@ -711,9 +695,8 @@ export default function SitesPage() {
       <DeleteSiteModal
         open={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
-        onConfirm={handleDeleteConfirm}
         site={selectedSite}
-        isDeleting={deleteSite.isPending && selectedSite?.id !== undefined}
+        deleteSite={deleteSite}
       />
     </div>
   );

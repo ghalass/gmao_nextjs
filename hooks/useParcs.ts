@@ -22,21 +22,23 @@ export function useParcs() {
     queryKey: ["parcs"],
     queryFn: async (): Promise<Parc[]> => {
       const response = await fetch("/api/parcs");
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des parcs");
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
-  const typeparcsQuery = useQuery({
-    queryKey: ["typeparcs"],
-    queryFn: async (): Promise<Typeparc[]> => {
-      const response = await fetch("/api/typeparcs");
+  const parcsByTypeparcQuery = useQuery({
+    queryKey: ["parcs"],
+    queryFn: async (): Promise<Parc[]> => {
+      const response = await fetch("/api/parcs");
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des types de parcs");
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
@@ -49,13 +51,11 @@ export function useParcs() {
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la création du parc");
+        throw new Error(dataRes.message || "Erreur lors du création");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["parcs"] });
@@ -77,15 +77,11 @@ export function useParcs() {
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.error || "Erreur lors de la modification du parc"
-        );
+        throw new Error(dataRes.message || "Erreur lors modification");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["parcs"] });
@@ -97,10 +93,9 @@ export function useParcs() {
       const response = await fetch(`/api/parcs/${id}`, {
         method: "DELETE",
       });
-
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la suppression du parc");
+        throw new Error(error.message || "Erreur lors de la suppression");
       }
     },
     onSuccess: () => {
@@ -110,7 +105,7 @@ export function useParcs() {
 
   return {
     parcsQuery,
-    typeparcsQuery,
+    parcsByTypeparcQuery,
     createParc,
     updateParc,
     deleteParc,

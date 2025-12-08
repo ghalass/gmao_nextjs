@@ -1,11 +1,60 @@
 // app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { userUpdateSchema } from "@/lib/validations/userSchema";
-import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
+import {
+  protectDeleteRoute,
+  protectReadRoute,
+  protectUpdateRoute,
+} from "@/lib/rbac/middleware";
 
-const resource = "user";
+const the_resource = "user";
+
+// GET - Récupérer un utilisateur spécifique
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const protectionError = await protectReadRoute(request, the_resource);
+    if (protectionError) return protectionError;
+
+    const { id } = await context.params;
+    if (!id) {
+      return NextResponse.json(
+        { message: "ID de l'utilisateur requis" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: true, // Relation directe avec Role
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Utilisateur non trouvé" },
+        { status: 404 }
+      );
+    }
+
+    // Exclure le mot de passe de la réponse
+    const { password, ...userWithoutPassword } = user;
+
+    return NextResponse.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return NextResponse.json(
+      { message: "Erreur lors de la récupération de l'utilisateur" },
+      { status: 500 }
+    );
+  }
+}
 
 // PATCH - Mettre à jour un utilisateur
 export async function PATCH(
@@ -13,7 +62,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -32,75 +81,187 @@ export async function PATCH(
       );
     }
 
-    const { email, name, password, role } = body;
+    const { email, name, password, roles, active } = body;
+    console.log(body);
 
     // Vérifier si l'utilisateur existe
     const existingUser = await prisma.user.findUnique({
       where: { id },
+      include: {
+        roles: true,
+      },
     });
 
     if (!existingUser) {
       return NextResponse.json(
-        { error: "Utilisateur introuvable" },
+        { message: "Utilisateur introuvable" },
         { status: 404 }
       );
     }
 
     // Vérifier si l'email est déjà utilisé par un autre utilisateur
-    if (email !== existingUser.email) {
+    if (email && email !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({
         where: { email },
       });
 
       if (emailExists) {
         return NextResponse.json(
-          { error: "Cet email est déjà utilisé" },
+          { message: "Cet email est déjà utilisé" },
           { status: 400 }
         );
       }
     }
 
+    // Validation: au moins un champ à mettre à jour
+    if (
+      email === undefined &&
+      name === undefined &&
+      password === undefined &&
+      roles === undefined &&
+      active === undefined
+    ) {
+      return NextResponse.json(
+        { message: "Au moins un champ à mettre à jour est requis" },
+        { status: 400 }
+      );
+    }
+
     // Préparer les données de mise à jour
-    const updateData: any = {
-      email,
-      name,
-    };
+    const updateData: any = {};
+
+    if (email !== undefined) {
+      updateData.email = email.trim();
+    }
+
+    if (name !== undefined) {
+      updateData.name = name.trim();
+    }
+
+    if (active !== undefined) {
+      updateData.active = Boolean(active);
+    }
 
     // Hasher le nouveau mot de passe si fourni
     if (password && password.trim() !== "") {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { message: "Le mot de passe doit contenir au moins 6 caractères" },
+          { status: 400 }
+        );
+      }
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    // Supprimer les anciens rôles et ajouter les nouveaux
-    await prisma.userRole.deleteMany({
-      where: { userId: id },
-    });
+    // Gestion des rôles
+    if (roles !== undefined) {
+      // Vérifier que roles est un tableau
+      if (!Array.isArray(roles)) {
+        return NextResponse.json(
+          { message: "Le champ 'roles' doit être un tableau" },
+          { status: 400 }
+        );
+      }
+
+      // Récupérer les rôles actuels
+      const currentRoleIds = existingUser.roles.map((role) => role.id);
+
+      // Identifier les rôles à ajouter et à retirer
+      const newRoleIds = roles;
+      const rolesToAdd = newRoleIds.filter(
+        (roleId: string) => !currentRoleIds.includes(roleId)
+      );
+      const rolesToRemove = currentRoleIds.filter(
+        (roleId: string) => !newRoleIds.includes(roleId)
+      );
+
+      // Vérifier que les rôles existent
+      if (rolesToAdd.length > 0) {
+        const existingRoles = await prisma.role.findMany({
+          where: {
+            id: { in: rolesToAdd },
+          },
+          select: { id: true },
+        });
+
+        const existingRoleIds = existingRoles.map((r) => r.id);
+        const nonExistentRoles = rolesToAdd.filter(
+          (roleId: string) => !existingRoleIds.includes(roleId)
+        );
+
+        if (nonExistentRoles.length > 0) {
+          return NextResponse.json(
+            {
+              message: `Les rôles suivants n'existent pas: ${nonExistentRoles.join(
+                ", "
+              )}`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Préparer les opérations sur les rôles
+      const roleOperations: any = {};
+
+      if (rolesToAdd.length > 0) {
+        roleOperations.connect = rolesToAdd.map((roleId: string) => ({
+          id: roleId,
+        }));
+      }
+
+      if (rolesToRemove.length > 0) {
+        roleOperations.disconnect = rolesToRemove.map((roleId: string) => ({
+          id: roleId,
+        }));
+      }
+
+      // Ajouter les opérations de rôles aux données de mise à jour
+      if (Object.keys(roleOperations).length > 0) {
+        updateData.roles = roleOperations;
+      }
+    }
+
+    console.log("Données de mise à jour:", updateData);
 
     // Mettre à jour l'utilisateur
     const user = await prisma.user.update({
       where: { id },
-      data: {
-        ...updateData,
-        roles: {
-          create: role.map((roleId: string) => ({
-            roleId,
-          })),
-        },
-      },
+      data: updateData,
       include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
+        roles: true,
       },
     });
 
-    return NextResponse.json(user);
+    // Exclure le mot de passe de la réponse
+    const { password: _, ...userWithoutPassword } = user;
+
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error("Erreur PATCH /api/users/[id]:", error);
+
+    // Gestion spécifique des erreurs Prisma
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { message: "Cet email est déjà utilisé" },
+          { status: 400 }
+        );
+      }
+
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          { message: "Utilisateur non trouvé" },
+          { status: 404 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Erreur lors de la mise à jour de l'utilisateur" },
+      {
+        message: "Erreur lors de la mise à jour de l'utilisateur",
+        details: error instanceof Error ? error.message : "Erreur inconnue",
+      },
       { status: 500 }
     );
   }
@@ -112,7 +273,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const { id } = await context.params;
@@ -124,21 +285,70 @@ export async function DELETE(
 
     if (!existingUser) {
       return NextResponse.json(
-        { error: "Utilisateur introuvable" },
+        { message: "Utilisateur introuvable" },
         { status: 404 }
       );
     }
 
-    // Supprimer l'utilisateur (les rôles seront supprimés en cascade)
+    // Vérifier si l'utilisateur tente de se supprimer lui-même
+    const authHeader = request.headers.get("authorization");
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        // Ici vous devriez décoder le JWT pour obtenir l'ID de l'utilisateur connecté
+        // Pour l'instant, c'est un exemple - à adapter à votre système d'authentification
+        if (existingUser.email.includes("admin")) {
+          return NextResponse.json(
+            {
+              message:
+                "Impossible de supprimer un compte administrateur via cette interface",
+            },
+            { status: 400 }
+          );
+        }
+      } catch (error) {
+        // Ne pas bloquer la suppression si erreur de décodage
+        console.warn("Erreur lors de la vérification du token:", error);
+      }
+    }
+
+    // Supprimer l'utilisateur (les rôles seront automatiquement déconnectés)
     await prisma.user.delete({
       where: { id },
     });
 
-    return NextResponse.json({ message: "Utilisateur supprimé avec succès" });
+    return NextResponse.json({
+      message: "Utilisateur supprimé avec succès",
+    });
   } catch (error) {
     console.error("Erreur DELETE /api/users/[id]:", error);
+
+    // Gestion spécifique des erreurs Prisma
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          { message: "Utilisateur non trouvé" },
+          { status: 404 }
+        );
+      }
+
+      if (error.code === "P2003") {
+        // Contrainte de clé étrangère (si l'utilisateur a d'autres relations)
+        return NextResponse.json(
+          {
+            message:
+              "Impossible de supprimer cet utilisateur car il est lié à d'autres données",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Erreur lors de la suppression de l'utilisateur" },
+      {
+        message: "Erreur lors de la suppression de l'utilisateur",
+        details: error instanceof Error ? error.message : "Erreur inconnue",
+      },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import {
   protectDeleteRoute,
   protectReadRoute,
@@ -9,7 +10,7 @@ import {
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-const the_resource = "permissions";
+const the_resource = "permission";
 
 export async function GET(
   request: NextRequest,
@@ -43,14 +44,6 @@ export async function GET(
     return NextResponse.json(permission);
   } catch (error) {
     console.error("❌ Error fetching permission:", error);
-
-    if (error instanceof Error && error.message.includes("ID non trouvé")) {
-      return NextResponse.json(
-        { message: "ID de la permission requis" },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       { message: "Erreur lors de la récupération de la permission" },
       { status: 500 }
@@ -78,8 +71,37 @@ export async function PUT(
     const body = await request.json();
     console.log("Request body:", body);
 
-    const { name, resourceId, action, description } = body;
+    const { name, resource, action, description } = body;
 
+    // Validation: au moins un champ à mettre à jour
+    if (
+      name === undefined &&
+      resource === undefined &&
+      action === undefined &&
+      description === undefined
+    ) {
+      return NextResponse.json(
+        { message: "Au moins un champ à mettre à jour est requis" },
+        { status: 400 }
+      );
+    }
+
+    // Valider l'action si elle est fournie
+    if (action !== undefined) {
+      const validActions = ["create", "read", "update", "delete"];
+      if (!validActions.includes(action)) {
+        return NextResponse.json(
+          {
+            message: `Action invalide. Les actions valides sont: ${validActions.join(
+              ", "
+            )}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Vérifier si la permission existe
     const existingPermission = await prisma.permission.findUnique({
       where: { id },
     });
@@ -92,14 +114,19 @@ export async function PUT(
       );
     }
 
+    // Préparer les données de mise à jour
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (resource !== undefined) updateData.resource = resource.trim();
+    if (action !== undefined) updateData.action = action;
+    if (description !== undefined) {
+      updateData.description = description.trim() || null;
+    }
+
+    // Mettre à jour la permission
     const permission = await prisma.permission.update({
       where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(resourceId !== undefined && { resourceId }),
-        ...(action !== undefined && { action }),
-        ...(description !== undefined && { description }),
-      },
+      data: updateData,
     });
 
     console.log("✅ Permission updated successfully:", permission.id);
@@ -107,14 +134,39 @@ export async function PUT(
   } catch (error) {
     console.error("❌ Error updating permission:", error);
 
-    if (error instanceof Error) {
-      if (error.message.includes("ID non trouvé")) {
-        return NextResponse.json(
-          { message: "ID de la permission requis" },
-          { status: 400 }
-        );
+    // Gestion spécifique des erreurs Prisma
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        const target = (error.meta?.target as string[]) || [];
+
+        if (target.includes("name")) {
+          return NextResponse.json(
+            { message: "Une permission avec ce nom existe déjà" },
+            { status: 400 }
+          );
+        }
+
+        if (target.includes("resource") && target.includes("action")) {
+          return NextResponse.json(
+            {
+              message:
+                "Une permission avec cette combinaison ressource/action existe déjà",
+            },
+            { status: 400 }
+          );
+        }
       }
 
+      if (error.code === "P2025") {
+        return NextResponse.json(
+          { message: "Permission non trouvée" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Gestion générique des erreurs
+    if (error instanceof Error) {
       if (error.message.includes("Unique constraint")) {
         return NextResponse.json(
           {
@@ -133,6 +185,7 @@ export async function PUT(
   }
 }
 
+//#region DELETE
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -150,6 +203,7 @@ export async function DELETE(
       );
     }
 
+    // Vérifier si la permission existe
     const existingPermission = await prisma.permission.findUnique({
       where: { id },
     });
@@ -161,18 +215,26 @@ export async function DELETE(
       );
     }
 
+    // NOTE: Avec votre schéma actuel, vous avez une relation Many-to-Many directe
+    // entre Role et Permission (roles: Role[] dans Permission)
+    // Donc pas de table RolePermission intermédiaire
+
     // Vérifier si la permission est utilisée dans des rôles
-    const rolePermissions = await prisma.rolePermission.findMany({
-      where: { permissionId: id },
-      include: {
-        role: {
-          select: { name: true },
+    const rolesWithPermission = await prisma.role.findMany({
+      where: {
+        permissions: {
+          some: {
+            id: id,
+          },
         },
+      },
+      select: {
+        name: true,
       },
     });
 
-    if (rolePermissions.length > 0) {
-      const roleNames = rolePermissions.map((rp) => rp.role.name).join(", ");
+    if (rolesWithPermission.length > 0) {
+      const roleNames = rolesWithPermission.map((role) => role.name).join(", ");
       return NextResponse.json(
         {
           message: `Cette permission est utilisée dans le(s) rôle(s): ${roleNames}. Veuillez d'abord la retirer de ces rôles.`,
@@ -181,6 +243,7 @@ export async function DELETE(
       );
     }
 
+    // Supprimer la permission
     await prisma.permission.delete({
       where: { id },
     });
@@ -190,10 +253,22 @@ export async function DELETE(
   } catch (error) {
     console.error("❌ Error deleting permission:", error);
 
-    if (error instanceof Error) {
-      if (error.message.includes("ID non trouvé")) {
+    // Gestion spécifique des erreurs Prisma
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
         return NextResponse.json(
-          { message: "ID de la permission requis" },
+          { message: "Permission non trouvée" },
+          { status: 404 }
+        );
+      }
+
+      // Si la permission est encore référencée (contrainte de clé étrangère)
+      if (error.code === "P2003") {
+        return NextResponse.json(
+          {
+            message:
+              "Impossible de supprimer cette permission car elle est utilisée dans un ou plusieurs rôles",
+          },
           { status: 400 }
         );
       }
@@ -205,3 +280,4 @@ export async function DELETE(
     );
   }
 }
+//#endregion

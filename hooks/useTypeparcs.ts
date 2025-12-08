@@ -1,4 +1,5 @@
 // hooks/useTypeparcs.ts
+import { API } from "@/lib/constantes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface Typeparc {
@@ -21,30 +22,29 @@ export function useTypeparcs() {
   const typeparcsQuery = useQuery({
     queryKey: ["typeparcs"],
     queryFn: async (): Promise<Typeparc[]> => {
-      const response = await fetch("/api/typeparcs");
+      const response = await fetch(`${API}/typeparcs`);
+      const dataRes = await response.json();
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des types de parcs");
+        throw new Error(dataRes.message || "Erreur lors du chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
   const createTypeparc = useMutation({
     mutationFn: async (data: TypeparcFormData): Promise<Typeparc> => {
-      const response = await fetch("/api/typeparcs", {
+      const response = await fetch(`${API}/typeparcs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la création");
+        throw new Error(dataRes.message || "Erreur lors du création");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typeparcs"] });
@@ -66,13 +66,11 @@ export function useTypeparcs() {
         },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la modification");
+        throw new Error(dataRes.message || "Erreur lors du modification");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typeparcs"] });
@@ -84,11 +82,11 @@ export function useTypeparcs() {
       const response = await fetch(`/api/typeparcs/${id}`, {
         method: "DELETE",
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la suppression");
+        throw new Error(dataRes.message || "Erreur lors du suppression");
       }
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["typeparcs"] });

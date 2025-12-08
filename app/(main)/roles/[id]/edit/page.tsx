@@ -5,11 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useFormik } from "formik";
 import yup from "@/lib/yupFr";
-import {
-  Permission,
-  usePermissions,
-  type PermissionWithResource,
-} from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useRoles } from "@/hooks/useRoles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,17 +31,20 @@ interface RoleFormValues {
   permissions: string[];
 }
 
+// Types pour les données
+interface Permission {
+  id: string;
+  name: string;
+  description?: string | null;
+  resource: string; // C'est une string, pas un objet
+  action?: string | null;
+}
+
 interface RoleData {
   id: string;
   name: string;
-  description?: string;
-  permissions?: Array<{
-    permissionId: string;
-    permission?: {
-      id: string;
-      name: string;
-    };
-  }>;
+  description?: string | null;
+  permissions: Permission[]; // Relation directe, pas d'intermédiaire
   createdAt: string;
   updatedAt: string;
 }
@@ -145,7 +144,7 @@ export default function EditRolePage() {
         formik.setValues({
           name: roleData.name || "",
           description: roleData.description || "",
-          permissions: roleData.permissions?.map((p) => p.permissionId) || [],
+          permissions: roleData.permissions?.map((p) => p.id) || [],
         });
       } catch (error) {
         console.error("Error fetching role:", error);
@@ -162,28 +161,29 @@ export default function EditRolePage() {
     fetchRoleData();
   }, [roleId]);
 
-  // CORRECTION : Vérifier explicitement que data est un tableau
+  // Correction: permissionsData est un tableau de Permission
   const permissionsData: Permission[] = Array.isArray(permissionsQuery.data)
     ? permissionsQuery.data
     : [];
 
-  // CORRECTION : Utiliser resource.name au lieu de resource directement
+  // Correction: Le filtre utilise directement permission.resource (string)
   const filteredPermissions = permissionsData.filter(
     (permission: Permission) => {
       const searchLower = searchTerm.toLowerCase();
-      const resourceName = permission.resource?.name || "Autres";
       return (
         permission.name.toLowerCase().includes(searchLower) ||
-        resourceName.toLowerCase().includes(searchLower) ||
-        permission.action.toLowerCase().includes(searchLower) ||
+        permission.resource.toLowerCase().includes(searchLower) ||
+        (permission.action &&
+          permission.action.toLowerCase().includes(searchLower)) ||
         (permission.description &&
           permission.description.toLowerCase().includes(searchLower))
       );
     }
   );
 
+  // Grouper par ressource (string)
   const groupedPermissions = filteredPermissions.reduce((acc, permission) => {
-    const resourceName = permission.resource?.name || "Autres";
+    const resourceName = permission.resource || "Autres";
     if (!acc[resourceName]) {
       acc[resourceName] = [];
     }
@@ -303,17 +303,17 @@ export default function EditRolePage() {
     filteredPermissionIds.length > 0 &&
     filteredPermissionIds.every((id) => formik.values.permissions.includes(id));
 
-  // CORRECTION : Calculer les ressources couvertes avec resource.name
+  // Calculer les ressources couvertes (utilise resource string directement)
   const selectedPermissionsCount = formik.values.permissions.length;
   const coveredResourcesCount = new Set(
     permissionsData
       .filter((p) => formik.values.permissions.includes(p.id))
-      .map((p) => p.resource?.name || "Autres")
+      .map((p) => p.resource || "Autres")
   ).size;
 
   return (
     <div className="container mx-auto py-10">
-      <div className=" mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="icon" asChild>
@@ -492,7 +492,7 @@ export default function EditRolePage() {
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Rechercher une permission..."
+                      placeholder="Rechercher par nom, ressource ou action..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -525,7 +525,7 @@ export default function EditRolePage() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className=" overflow-y-auto space-y-6">
+                  <div className="overflow-y-auto space-y-6 max-h-[600px]">
                     {Object.keys(groupedPermissions).length > 0 ? (
                       Object.entries(groupedPermissions).map(
                         ([resourceName, resourcePermissions]: [
@@ -548,14 +548,15 @@ export default function EditRolePage() {
                             >
                               <div className="flex items-center justify-between mb-3">
                                 <div>
-                                  <h3 className="font-semibold text-lg capitalize">
+                                  <h3 className="font-semibold text-lg">
                                     {resourceName}
                                   </h3>
-                                  {resourcePermissions[0]?.resource?.label && (
-                                    <p className="text-sm text-muted-foreground">
-                                      {resourcePermissions[0].resource.label}
-                                    </p>
-                                  )}
+                                  <p className="text-sm text-muted-foreground">
+                                    {resourcePermissions.length} permission
+                                    {resourcePermissions.length !== 1
+                                      ? "s"
+                                      : ""}
+                                  </p>
                                 </div>
 
                                 {/* Sélectionner tout - Par ressource */}
@@ -616,12 +617,17 @@ export default function EditRolePage() {
                                             </p>
                                           )}
                                         </div>
-                                        <Badge
-                                          variant="outline"
-                                          className="ml-2 capitalize shrink-0"
-                                        >
-                                          {permission.action}
-                                        </Badge>
+                                        <div className="flex flex-col items-end gap-1 ml-2 shrink-0">
+                                          <Badge
+                                            variant="outline"
+                                            className="capitalize"
+                                          >
+                                            {permission.action || "tous"}
+                                          </Badge>
+                                          <span className="text-xs text-muted-foreground">
+                                            {permission.resource}
+                                          </span>
+                                        </div>
                                       </Label>
                                     </div>
                                   </div>

@@ -12,6 +12,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { Typeparc } from "@/lib/types";
+import { toast } from "sonner";
 
 interface DeleteTypeparcModalProps {
   open: boolean;
@@ -44,8 +45,13 @@ export function DeleteTypeparcModal({
 
   const isSubmitting = deleteTypeparc.isPending;
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -77,7 +83,7 @@ export function DeleteTypeparcModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClode}
             disabled={isSubmitting}
           >
             Annuler

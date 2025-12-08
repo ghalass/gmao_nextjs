@@ -7,7 +7,7 @@ import {
 } from "@/lib/rbac/core";
 import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
 
-const the_resource = "permissions";
+const the_resource = "permission";
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +30,7 @@ export async function POST(
 
     if (err instanceof Error && err.message.includes("Unique constraint")) {
       return NextResponse.json(
-        { error: "Cette permission est déjà assignée à ce rôle" },
+        { message: "Cette permission est déjà assignée à ce rôle" },
         { status: 400 }
       );
     }

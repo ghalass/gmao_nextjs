@@ -95,10 +95,10 @@ const configItems = [
 
 const saisieItems = [
   {
-    title: "Performances",
-    url: "/performances",
+    title: "Saisies",
+    url: "/saisies",
     icon: Truck,
-    description: "Gérer les performances des engins",
+    description: "Gérer les saisies des engins",
   },
 ];
 

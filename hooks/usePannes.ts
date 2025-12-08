@@ -9,13 +9,11 @@ export function usePannes() {
     queryKey: ["pannes"],
     queryFn: async () => {
       const response = await fetch("/api/pannes");
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors du chargement des pannes"
-        );
+        throw new Error(dataRes.message || "Erreur lors de chargement");
       }
-      return response.json();
+      return dataRes;
     },
   });
 
@@ -26,15 +24,11 @@ export function usePannes() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors de la création de la panne"
-        );
+        throw new Error(dataRes.message || "Erreur lors de création");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pannes"] });
@@ -54,15 +48,11 @@ export function usePannes() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors de la modification de la panne"
-        );
+        throw new Error(dataRes.message || "Erreur lors de modification");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pannes"] });
@@ -74,15 +64,11 @@ export function usePannes() {
       const response = await fetch(`/api/pannes/${id}`, {
         method: "DELETE",
       });
-
+      const dataRes = await response.json();
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.message || "Erreur lors de la suppression de la panne"
-        );
+        throw new Error(dataRes.message || "Erreur lors de suppression");
       }
-
-      return response.json();
+      return dataRes;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pannes"] });

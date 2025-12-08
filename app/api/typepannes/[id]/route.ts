@@ -7,7 +7,7 @@ import {
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
 
-const resource = "typepanne";
+const the_resource = "typepanne";
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
     // Attendre les params
     const { id } = await context.params;
@@ -34,7 +34,7 @@ export async function GET(
 
     if (!typepanne) {
       return NextResponse.json(
-        { error: "Type de panne non trouvé" },
+        { message: "Type de panne non trouvé" },
         { status: 404 }
       );
     }
@@ -55,7 +55,7 @@ export async function PUT(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectUpdateRoute(request, resource);
+    const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     // Attendre les params en premier
@@ -65,7 +65,7 @@ export async function PUT(
 
     if (!name) {
       return NextResponse.json(
-        { error: "Le nom est obligatoire" },
+        { message: "Le nom est obligatoire" },
         { status: 400 }
       );
     }
@@ -77,7 +77,7 @@ export async function PUT(
 
     if (!existingTypepanne) {
       return NextResponse.json(
-        { error: "Type de panne non trouvé" },
+        { message: "Type de panne non trouvé" },
         { status: 404 }
       );
     }
@@ -92,7 +92,7 @@ export async function PUT(
 
     if (duplicateTypepanne) {
       return NextResponse.json(
-        { error: "Un type de panne avec ce nom existe déjà" },
+        { message: "Un type de panne avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -129,7 +129,7 @@ export async function DELETE(
 ) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectDeleteRoute(request, resource);
+    const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     // Attendre les params
@@ -150,7 +150,7 @@ export async function DELETE(
 
     if (!existingTypepanne) {
       return NextResponse.json(
-        { error: "Type de panne non trouvé" },
+        { message: "Type de panne non trouvé" },
         { status: 404 }
       );
     }

@@ -56,8 +56,13 @@ export function DeletePanneModal({
   // Compter le nombre de saisies HIM
   const nombreSaisies = panne?.saisiehim?.length || 0;
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -103,7 +108,7 @@ export function DeletePanneModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClode}
             disabled={isLoading}
           >
             Annuler

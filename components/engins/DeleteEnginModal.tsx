@@ -44,8 +44,13 @@ export function DeleteEnginModal({
 
   const isSubmitting = deleteEngin.isPending;
 
+  const handleClode = () => {
+    onClose();
+    setError(null);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClode}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -82,7 +87,7 @@ export function DeleteEnginModal({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClode}
             disabled={isSubmitting}
           >
             Annuler

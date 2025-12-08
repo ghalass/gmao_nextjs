@@ -17,12 +17,12 @@ const typeparcSchema = yup.object().shape({
     ),
 });
 
-const resource = "typeparc";
+const the_resource = "typeparc";
 
 export async function GET(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectReadRoute(request, resource);
+    const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const typeparcs = await prisma.typeparc.findMany({
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier la permission de lecture des sites (pas "users")
-    const protectionError = await protectCreateRoute(request, resource);
+    const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     const body = await request.json();
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     if (existingTypeparc) {
       return NextResponse.json(
-        { error: "Un type de parc avec ce nom existe déjà" },
+        { message: "Un type de parc avec ce nom existe déjà" },
         { status: 409 }
       );
     }
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof yup.ValidationError) {
       return NextResponse.json(
-        { error: "Données invalides", details: error.errors },
+        { message: "Données invalides", details: error.errors },
         { status: 400 }
       );
     }
