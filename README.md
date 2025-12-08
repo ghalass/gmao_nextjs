@@ -1,7 +1,7 @@
 pnpm create next-app@latest gmao
 
 pnpm dlx shadcn@latest init
-pnpm dlx shadcn@latest add button scroll-area
+pnpm dlx shadcn@latest add button scroll-area tabs
 pnpm add next-themes
 
 pnpm add prisma @types/node @types/pg --save-dev
@@ -17,7 +17,7 @@ pnpm add -D @types/jsonwebtoken
 pnpm add -D ts-node typescript
 pnpm add iron-session
 pnpm add @tanstack/react-form
-
+pnpm add recharts
 ---
 
 ssh root@147.79.118.72
