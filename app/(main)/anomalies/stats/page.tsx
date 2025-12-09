@@ -38,7 +38,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
 
-// Composants de graphique (vous devrez les installer)
+// Composants de graphique
 import {
   BarChart,
   Bar,
@@ -76,7 +76,6 @@ export default function AnomalieStatsPage() {
   };
 
   const handleExport = () => {
-    // Implémentez l'export ici
     console.log("Export des statistiques");
   };
 
@@ -139,19 +138,15 @@ export default function AnomalieStatsPage() {
   }
 
   const calculateTempsResoluAnomalies = (priorite: Priorite): string => {
-    // Cette fonction devrait récupérer les données d'anomalies résolues par priorité
-    // Pour l'instant, retournez une valeur par défaut ou utilisez les données d'évolution
-
     if (!evolutionQuery.data?.tempsMoyenResolution) return "N/A";
 
-    // Logique basée sur la priorité (ajustez selon vos données)
     switch (priorite) {
       case "ELEVEE":
-        return (evolutionQuery.data.tempsMoyenResolution * 0.6).toFixed(1); // 60% du temps moyen
+        return (evolutionQuery.data.tempsMoyenResolution * 0.6).toFixed(1);
       case "MOYENNE":
         return evolutionQuery.data.tempsMoyenResolution.toFixed(1);
       case "FAIBLE":
-        return (evolutionQuery.data.tempsMoyenResolution * 1.5).toFixed(1); // 150% du temps moyen
+        return (evolutionQuery.data.tempsMoyenResolution * 1.5).toFixed(1);
       default:
         return evolutionQuery.data.tempsMoyenResolution.toFixed(1);
     }
@@ -162,7 +157,7 @@ export default function AnomalieStatsPage() {
       {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Tableau de bord des anomalies
           </h1>
           <p className="text-muted-foreground">
@@ -180,31 +175,36 @@ export default function AnomalieStatsPage() {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4" />
-            <CardTitle>Filtres</CardTitle>
+            <CardTitle className="text-foreground">Filtres</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Site */}
             <div className="space-y-2">
-              <Label htmlFor="siteId">Site</Label>
+              <Label htmlFor="siteId" className="text-foreground">
+                Site
+              </Label>
               <Select
                 value={filters.siteId}
                 onValueChange={(value) => {
                   handleFilterChange("siteId", value);
-                  // Réinitialiser l'engin si on change de site
                   if (value === "all") {
                     handleFilterChange("enginId", "all");
                   }
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background text-foreground border-input">
                   <SelectValue placeholder="Tous les sites" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background text-foreground border-border">
                   <SelectItem value="all">Tous les sites</SelectItem>
                   {sitesQuery.data?.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
+                    <SelectItem
+                      key={site.id}
+                      value={site.id}
+                      className="focus:bg-accent focus:text-accent-foreground"
+                    >
                       {site.name}
                     </SelectItem>
                   ))}
@@ -214,13 +214,15 @@ export default function AnomalieStatsPage() {
 
             {/* Engin */}
             <div className="space-y-2">
-              <Label htmlFor="enginId">Engin</Label>
+              <Label htmlFor="enginId" className="text-foreground">
+                Engin
+              </Label>
               <Select
                 value={filters.enginId}
                 onValueChange={(value) => handleFilterChange("enginId", value)}
                 disabled={!filters.siteId || filters.siteId === "all"}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background text-foreground border-input">
                   <SelectValue
                     placeholder={
                       !filters.siteId || filters.siteId === "all"
@@ -229,7 +231,7 @@ export default function AnomalieStatsPage() {
                     }
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background text-foreground border-border">
                   <SelectItem value="all">Tous les engins</SelectItem>
                   {enginsQuery.data
                     ?.filter(
@@ -239,7 +241,11 @@ export default function AnomalieStatsPage() {
                         engin.siteId === filters.siteId
                     )
                     .map((engin) => (
-                      <SelectItem key={engin.id} value={engin.id}>
+                      <SelectItem
+                        key={engin.id}
+                        value={engin.id}
+                        className="focus:bg-accent focus:text-accent-foreground"
+                      >
                         {engin.name}
                       </SelectItem>
                     ))}
@@ -249,10 +255,13 @@ export default function AnomalieStatsPage() {
 
             {/* Période */}
             <div className="space-y-2">
-              <Label>Période</Label>
+              <Label className="text-foreground">Période</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label htmlFor="dateFrom" className="text-xs">
+                  <Label
+                    htmlFor="dateFrom"
+                    className="text-xs text-muted-foreground"
+                  >
                     De
                   </Label>
                   <input
@@ -265,11 +274,14 @@ export default function AnomalieStatsPage() {
                         e.target.value || undefined
                       )
                     }
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="dateTo" className="text-xs">
+                  <Label
+                    htmlFor="dateTo"
+                    className="text-xs text-muted-foreground"
+                  >
                     À
                   </Label>
                   <input
@@ -279,7 +291,7 @@ export default function AnomalieStatsPage() {
                     onChange={(e) =>
                       handleFilterChange("dateTo", e.target.value || undefined)
                     }
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
                   />
                 </div>
               </div>
@@ -296,12 +308,12 @@ export default function AnomalieStatsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total anomalies</p>
-                <div className="text-3xl font-bold mt-2">
+                <div className="text-3xl font-bold mt-2 text-foreground">
                   {statsQuery.data?.total || 0}
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-primary" />
               </div>
             </div>
             <div className="mt-4 text-sm text-muted-foreground">
@@ -314,8 +326,8 @@ export default function AnomalieStatsPage() {
                         className={
                           evolutionQuery.data.comparaisonMensuelle.pourcentage >
                           0
-                            ? "text-red-600"
-                            : "text-green-600"
+                            ? "text-destructive"
+                            : "text-green-600 dark:text-green-400"
                         }
                       >
                         {evolutionQuery.data.comparaisonMensuelle.pourcentage >
@@ -334,7 +346,9 @@ export default function AnomalieStatsPage() {
                       </span>
                     </>
                   ) : (
-                    <span className="text-gray-600">Aucune variation</span>
+                    <span className="text-muted-foreground">
+                      Aucune variation
+                    </span>
                   )}
                 </div>
               )}
@@ -348,17 +362,20 @@ export default function AnomalieStatsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Exécutées</p>
-                <div className="text-3xl font-bold mt-2 text-green-600">
+                <div className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">
                   {statsQuery.data?.parStatut?.EXECUTE || 0}
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700">
+                <Badge
+                  variant="outline"
+                  className="bg-green-500/10 text-green-700 dark:text-green-400"
+                >
                   {statsQuery.data?.total
                     ? Math.round(
                         ((statsQuery.data.parStatut?.EXECUTE || 0) /
@@ -376,8 +393,8 @@ export default function AnomalieStatsPage() {
                         ?.tauxResolution || 0) >
                       (evolutionQuery.data.comparaisonMensuelle.moisPrecedent
                         ?.tauxResolution || 0)
-                        ? "bg-blue-50 text-blue-700"
-                        : "bg-yellow-50 text-yellow-700"
+                        ? "bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                        : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                     }
                   >
                     {evolutionQuery.data.comparaisonMensuelle.moisCourant
@@ -400,19 +417,19 @@ export default function AnomalieStatsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">En attente PDR</p>
-                <div className="text-3xl font-bold mt-2 text-yellow-600">
+                <div className="text-3xl font-bold mt-2 text-yellow-600 dark:text-yellow-400">
                   {statsQuery.data?.parStatut?.ATTENTE_PDR || 0}
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
             <div className="mt-4 space-y-1">
               <div className="flex items-center justify-between">
                 <Badge
                   variant="outline"
-                  className="bg-yellow-50 text-yellow-700"
+                  className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                 >
                   {statsQuery.data?.total
                     ? Math.round(
@@ -451,18 +468,21 @@ export default function AnomalieStatsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Priorité élevée</p>
-                <div className="text-3xl font-bold mt-2 text-red-600">
+                <div className="text-3xl font-bold mt-2 text-destructive">
                   {statsQuery.data?.parPriorite?.ELEVEE || 0}
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-red-600" />
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-destructive" />
               </div>
             </div>
             <div className="mt-4">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="bg-red-50 text-red-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-destructive/10 text-destructive"
+                  >
                     {statsQuery.data?.total
                       ? Math.round(
                           ((statsQuery.data.parPriorite?.ELEVEE || 0) /
@@ -478,8 +498,8 @@ export default function AnomalieStatsPage() {
                       className={
                         evolutionQuery.data.evolutionPeriodes
                           .pourcentageTrimestriel > 0
-                          ? "bg-red-50 text-red-700"
-                          : "bg-green-50 text-green-700"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-green-500/10 text-green-700 dark:text-green-400"
                       }
                     >
                       {evolutionQuery.data.evolutionPeriodes
@@ -501,11 +521,11 @@ export default function AnomalieStatsPage() {
                       className={
                         evolutionQuery.data.evolutionPeriodes.tendance ===
                         "hausse"
-                          ? "text-red-600 font-medium"
+                          ? "text-destructive font-medium"
                           : evolutionQuery.data.evolutionPeriodes.tendance ===
                             "baisse"
-                          ? "text-green-600 font-medium"
-                          : "text-gray-600"
+                          ? "text-green-600 dark:text-green-400 font-medium"
+                          : "text-muted-foreground"
                       }
                     >
                       {evolutionQuery.data.evolutionPeriodes.tendance ===
@@ -526,20 +546,32 @@ export default function AnomalieStatsPage() {
 
       {/* Graphiques et visualisations */}
       <Tabs defaultValue="statut" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="statut" className="flex items-center">
+        <TabsList className="bg-background border border-input">
+          <TabsTrigger
+            value="statut"
+            className="flex items-center data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+          >
             <BarChart3 className="mr-2 h-4 w-4" />
             Par statut
           </TabsTrigger>
-          <TabsTrigger value="priorite" className="flex items-center">
+          <TabsTrigger
+            value="priorite"
+            className="flex items-center data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+          >
             <PieChart className="mr-2 h-4 w-4" />
             Par priorité
           </TabsTrigger>
-          <TabsTrigger value="source" className="flex items-center">
+          <TabsTrigger
+            value="source"
+            className="flex items-center data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+          >
             <BarChart3 className="mr-2 h-4 w-4" />
             Par source
           </TabsTrigger>
-          <TabsTrigger value="evolution" className="flex items-center">
+          <TabsTrigger
+            value="evolution"
+            className="flex items-center data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+          >
             <TrendingUp className="mr-2 h-4 w-4" />
             Évolution
           </TabsTrigger>
@@ -549,22 +581,30 @@ export default function AnomalieStatsPage() {
         <TabsContent value="statut" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Répartition par statut</CardTitle>
+              <CardTitle className="text-foreground">
+                Répartition par statut
+              </CardTitle>
               <CardDescription>Nombre d'anomalies par statut</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statutData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis
                       dataKey="name"
                       tickFormatter={(value) =>
                         value.charAt(0).toUpperCase() + value.slice(1)
                       }
+                      stroke="#9CA3AF"
                     />
-                    <YAxis />
+                    <YAxis stroke="#9CA3AF" />
                     <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))",
+                        color: "hsl(var(--foreground))",
+                      }}
                       formatter={(value) => [value, "Nombre"]}
                       labelFormatter={(label) => `Statut: ${label}`}
                     />
@@ -601,8 +641,10 @@ export default function AnomalieStatsPage() {
                           COLORS[index % COLORS.length],
                       }}
                     />
-                    <span className="text-sm capitalize">{item.name}</span>
-                    <span className="text-sm font-medium ml-auto">
+                    <span className="text-sm text-foreground capitalize">
+                      {item.name}
+                    </span>
+                    <span className="text-sm font-medium text-foreground ml-auto">
                       {item.value}
                     </span>
                   </div>
@@ -616,7 +658,9 @@ export default function AnomalieStatsPage() {
         <TabsContent value="priorite" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Répartition par priorité</CardTitle>
+              <CardTitle className="text-foreground">
+                Répartition par priorité
+              </CardTitle>
               <CardDescription>
                 Distribution des anomalies par niveau de priorité
               </CardDescription>
@@ -652,6 +696,11 @@ export default function AnomalieStatsPage() {
                         ))}
                       </Pie>
                       <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          borderColor: "hsl(var(--border))",
+                          color: "hsl(var(--foreground))",
+                        }}
                         formatter={(value) => [value, "Nombre"]}
                         labelFormatter={(label, payload) => {
                           if (payload && payload.length > 0) {
@@ -672,7 +721,9 @@ export default function AnomalieStatsPage() {
 
                 {/* Détails par priorité */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Détails par priorité</h3>
+                  <h3 className="font-semibold text-foreground">
+                    Détails par priorité
+                  </h3>
                   {prioriteData.map((item, index) => (
                     <div key={index} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -685,13 +736,15 @@ export default function AnomalieStatsPage() {
                                 COLORS[index % COLORS.length],
                             }}
                           />
-                          <span className="font-medium capitalize">
+                          <span className="font-medium text-foreground capitalize">
                             {item.name}
                           </span>
                         </div>
-                        <span className="text-lg font-bold">{item.value}</span>
+                        <span className="text-lg font-bold text-foreground">
+                          {item.value}
+                        </span>
                       </div>
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -713,37 +766,37 @@ export default function AnomalieStatsPage() {
                     </div>
                   ))}
 
-                  {/* Statistiques additionnelles - VERSION DYNAMIQUE */}
-                  <div className="mt-8 pt-6 border-t">
-                    <h4 className="font-semibold mb-4">
+                  {/* Statistiques additionnelles */}
+                  <div className="mt-8 pt-6 border-t border-border">
+                    <h4 className="font-semibold text-foreground mb-4">
                       Temps de résolution moyen
                     </h4>
                     {evolutionQuery.data?.tempsMoyenResolution ? (
                       <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-center p-3 bg-primary/10 rounded-lg">
+                          <div className="text-2xl font-bold text-primary">
                             {evolutionQuery.data.tempsMoyenResolution.toFixed(
                               1
                             )}
                           </div>
-                          <div className="text-xs text-blue-500">
+                          <div className="text-xs text-primary">
                             jours (Moyenne globale)
                           </div>
                         </div>
-                        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                          <div className="text-2xl font-bold text-yellow-600">
+                        <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
+                          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                             {calculateTempsResoluAnomalies("ELEVEE")}
                           </div>
-                          <div className="text-xs text-yellow-500">
+                          <div className="text-xs text-yellow-600 dark:text-yellow-400">
                             jours (Priorité élevée)
                           </div>
                         </div>
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">
+                        <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {evolutionQuery.data.repartitionStatut?.resolues ||
                               0}
                           </div>
-                          <div className="text-xs text-green-500">
+                          <div className="text-xs text-green-600 dark:text-green-400">
                             anomalies résolues
                           </div>
                         </div>
@@ -760,17 +813,17 @@ export default function AnomalieStatsPage() {
 
                     {/* Métriques additionnelles */}
                     <div className="mt-6 grid grid-cols-2 gap-4">
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <div className="text-lg font-bold text-gray-700">
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-lg font-bold text-foreground">
                           {prioriteData.find((p) => p.priorite === "ELEVEE")
                             ?.value || 0}
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-muted-foreground">
                           Priorité élevée
                         </div>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <div className="text-lg font-bold text-gray-700">
+                      <div className="text-center p-3 bg-muted rounded-lg">
+                        <div className="text-lg font-bold text-foreground">
                           {Math.round(
                             ((prioriteData.find((p) => p.priorite === "ELEVEE")
                               ?.value || 0) /
@@ -779,7 +832,7 @@ export default function AnomalieStatsPage() {
                           )}
                           %
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-xs text-muted-foreground">
                           du total (Élevée)
                         </div>
                       </div>
@@ -795,17 +848,24 @@ export default function AnomalieStatsPage() {
         <TabsContent value="source" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Répartition par source</CardTitle>
+              <CardTitle className="text-foreground">
+                Répartition par source
+              </CardTitle>
               <CardDescription>Origine des anomalies détectées</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={sourceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="name" stroke="#9CA3AF" />
+                    <YAxis stroke="#9CA3AF" />
                     <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))",
+                        color: "hsl(var(--foreground))",
+                      }}
                       formatter={(value) => [value, "Nombre"]}
                       labelFormatter={(label) => `Source: ${label}`}
                     />
@@ -822,11 +882,11 @@ export default function AnomalieStatsPage() {
 
               {/* Insights sur les sources */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-blue-800 mb-2">
+                <div className="bg-primary/10 p-4 rounded-lg">
+                  <h4 className="font-semibold text-primary mb-2">
                     Source majoritaire
                   </h4>
-                  <p className="text-blue-700 text-sm">
+                  <p className="text-primary text-sm">
                     {sourceData.length > 0
                       ? `Les inspections (${
                           Object.values(SourceAnomalie)[0]
@@ -838,11 +898,11 @@ export default function AnomalieStatsPage() {
                       : "Aucune donnée disponible"}
                   </p>
                 </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">
+                <div className="bg-green-500/10 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-600 dark:text-green-400 mb-2">
                     Taux de détection
                   </h4>
-                  <p className="text-green-700 text-sm">
+                  <p className="text-green-600 dark:text-green-400 text-sm">
                     {sourceData.length > 0
                       ? `${sourceData.reduce(
                           (acc, curr) => acc + curr.value,
@@ -860,7 +920,9 @@ export default function AnomalieStatsPage() {
         <TabsContent value="evolution" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Évolution temporelle</CardTitle>
+              <CardTitle className="text-foreground">
+                Évolution temporelle
+              </CardTitle>
               <CardDescription>
                 Trend des anomalies sur les 6 derniers mois
                 {evolutionQuery.data?.evolution && (
@@ -890,10 +952,15 @@ export default function AnomalieStatsPage() {
                       <BarChart
                         data={evolutionQuery.data?.evolutionMensuelle || []}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="mois" />
-                        <YAxis />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="mois" stroke="#9CA3AF" />
+                        <YAxis stroke="#9CA3AF" />
                         <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            borderColor: "hsl(var(--border))",
+                            color: "hsl(var(--foreground))",
+                          }}
                           formatter={(value, name) => {
                             const labelMap: Record<string, string> = {
                               anomalies: "Anomalies détectées",
@@ -948,7 +1015,7 @@ export default function AnomalieStatsPage() {
                     <Card>
                       <CardContent className="pt-6">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-blue-600">
+                          <div className="text-3xl font-bold text-primary">
                             {evolutionQuery.data?.tauxResolution
                               ? `${evolutionQuery.data.tauxResolution.toFixed(
                                   1
@@ -964,7 +1031,7 @@ export default function AnomalieStatsPage() {
                     <Card>
                       <CardContent className="pt-6">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-green-600">
+                          <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                             {evolutionQuery.data?.tempsMoyenResolution || 0}j
                           </div>
                           <div className="text-sm text-muted-foreground mt-2">
@@ -976,7 +1043,7 @@ export default function AnomalieStatsPage() {
                     <Card>
                       <CardContent className="pt-6">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-purple-600">
+                          <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                             {evolutionQuery.data?.repartitionStatut
                               ?.programmées || 0}
                           </div>
@@ -989,7 +1056,7 @@ export default function AnomalieStatsPage() {
                     <Card>
                       <CardContent className="pt-6">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-red-600">
+                          <div className="text-3xl font-bold text-destructive">
                             {evolutionQuery.data?.anomaliesCritiques || 0}
                           </div>
                           <div className="text-sm text-muted-foreground mt-2">
@@ -1004,7 +1071,7 @@ export default function AnomalieStatsPage() {
                   <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">
+                        <CardTitle className="text-sm text-foreground">
                           Répartition mensuelle détaillée
                         </CardTitle>
                       </CardHeader>
@@ -1014,7 +1081,7 @@ export default function AnomalieStatsPage() {
                             (month, index) => (
                               <div key={index} className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                  <span className="font-medium">
+                                  <span className="font-medium text-foreground">
                                     {month.mois}
                                   </span>
                                   <Badge variant="outline">
@@ -1023,12 +1090,14 @@ export default function AnomalieStatsPage() {
                                 </div>
                                 <div className="space-y-1">
                                   <div className="flex justify-between text-xs">
-                                    <span>Résolues</span>
-                                    <span className="font-medium">
+                                    <span className="text-muted-foreground">
+                                      Résolues
+                                    </span>
+                                    <span className="font-medium text-foreground">
                                       {month.resolues}
                                     </span>
                                   </div>
-                                  <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                  <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                                     <div
                                       className="h-full bg-green-500 rounded-full"
                                       style={{
@@ -1043,12 +1112,14 @@ export default function AnomalieStatsPage() {
                                     />
                                   </div>
                                   <div className="flex justify-between text-xs">
-                                    <span>En attente PDR</span>
-                                    <span className="font-medium">
+                                    <span className="text-muted-foreground">
+                                      En attente PDR
+                                    </span>
+                                    <span className="font-medium text-foreground">
                                       {month.attentePDR}
                                     </span>
                                   </div>
-                                  <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                                  <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                                     <div
                                       className="h-full bg-yellow-500 rounded-full"
                                       style={{
@@ -1072,7 +1143,7 @@ export default function AnomalieStatsPage() {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">
+                        <CardTitle className="text-sm text-foreground">
                           Performances globales
                         </CardTitle>
                       </CardHeader>
@@ -1083,12 +1154,12 @@ export default function AnomalieStatsPage() {
                             className={`p-3 rounded-lg ${
                               evolutionQuery.data?.evolution &&
                               evolutionQuery.data.evolution > 0
-                                ? "bg-red-50"
-                                : "bg-green-50"
+                                ? "bg-destructive/10"
+                                : "bg-green-500/10"
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-medium">
+                              <span className="font-medium text-foreground">
                                 Tendance globale
                               </span>
                               <Badge
@@ -1111,7 +1182,7 @@ export default function AnomalieStatsPage() {
                                 %
                               </Badge>
                             </div>
-                            <p className="text-sm mt-1">
+                            <p className="text-sm mt-1 text-foreground">
                               {evolutionQuery.data?.evolution &&
                               evolutionQuery.data.evolution > 0
                                 ? "Le nombre d'anomalies est en augmentation"
@@ -1122,7 +1193,7 @@ export default function AnomalieStatsPage() {
                           {/* Efficacité de résolution */}
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="font-medium">
+                              <span className="font-medium text-foreground">
                                 Efficacité de résolution
                               </span>
                               <Badge
@@ -1144,9 +1215,9 @@ export default function AnomalieStatsPage() {
                                 %
                               </Badge>
                             </div>
-                            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-blue-500 rounded-full"
+                                className="h-full bg-primary rounded-full"
                                 style={{
                                   width: `${
                                     evolutionQuery.data?.tauxResolution || 0
@@ -1171,7 +1242,7 @@ export default function AnomalieStatsPage() {
                           {/* Temps de résolution */}
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="font-medium">
+                              <span className="font-medium text-foreground">
                                 Délai moyen de résolution
                               </span>
                               <Badge
@@ -1191,7 +1262,7 @@ export default function AnomalieStatsPage() {
                                 jours
                               </Badge>
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm text-foreground">
                               {evolutionQuery.data?.tempsMoyenResolution &&
                               evolutionQuery.data.tempsMoyenResolution <= 5
                                 ? "Excellent délai de résolution"
@@ -1210,14 +1281,13 @@ export default function AnomalieStatsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        {/*  */}
       </Tabs>
 
       {/* Top anomalies critiques */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <AlertTriangle className="mr-2 h-5 w-5 text-red-500" />
+          <CardTitle className="flex items-center text-foreground">
+            <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
             Anomalies critiques en attente
           </CardTitle>
           <CardDescription>
@@ -1236,19 +1306,19 @@ export default function AnomalieStatsPage() {
               .map((anomalie) => (
                 <div
                   key={anomalie.id}
-                  className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
+                  className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg border border-destructive/20"
                 >
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <Badge variant="destructive">Élevée</Badge>
-                      <span className="font-medium">
+                      <span className="font-medium text-foreground">
                         {anomalie.numeroBacklog}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 truncate">
                       {anomalie.description}
                     </p>
-                    <div className="flex items-center space-x-4 mt-2 text-xs">
+                    <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
                       <span>{anomalie.engin?.name}</span>
                       <span>•</span>
                       <span>{anomalie.site?.name}</span>
@@ -1265,11 +1335,11 @@ export default function AnomalieStatsPage() {
                   <div className="text-right">
                     <Badge
                       variant="outline"
-                      className="bg-yellow-50 text-yellow-700"
+                      className="bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
                     >
                       {anomalie.statut.replace("_", " ").toLowerCase()}
                     </Badge>
-                    <div className="text-xs text-red-600 mt-1">
+                    <div className="text-xs text-destructive mt-1">
                       {Math.floor(
                         (new Date().getTime() -
                           new Date(anomalie.dateDetection).getTime()) /
@@ -1302,16 +1372,16 @@ export default function AnomalieStatsPage() {
       {/* Notes et recommandations */}
       <Card>
         <CardHeader>
-          <CardTitle>Recommandations</CardTitle>
+          <CardTitle className="text-foreground">Recommandations</CardTitle>
           <CardDescription>Suggestions basées sur les données</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-800 mb-2">
+            <div className="bg-primary/10 p-4 rounded-lg">
+              <h4 className="font-semibold text-primary mb-2">
                 📈 Amélioration continue
               </h4>
-              <ul className="text-blue-700 text-sm space-y-1">
+              <ul className="text-primary text-sm space-y-1">
                 <li>
                   • Augmenter les inspections préventives pour réduire les
                   détections VS
@@ -1322,11 +1392,11 @@ export default function AnomalieStatsPage() {
                 </li>
               </ul>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-green-800 mb-2">
+            <div className="bg-green-500/10 p-4 rounded-lg">
+              <h4 className="font-semibold text-green-600 dark:text-green-400 mb-2">
                 ✅ Actions prioritaires
               </h4>
-              <ul className="text-green-700 text-sm space-y-1">
+              <ul className="text-green-600 dark:text-green-400 text-sm space-y-1">
                 <li>
                   • Résoudre les anomalies de priorité élevée dans les 48h
                 </li>
