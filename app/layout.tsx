@@ -18,7 +18,8 @@ export const metadata: Metadata = {
     "GMAO-PRO est une application web pour gestion de la maintenance assisté par ordinateur",
   authors: { name: "GHALASS", url: "ghalass.com" },
   icons: {
-    icon: "/favicon.ico", // This sets the favicon
+    icon: "/images/wrench.png", // This sets the favicon
+    // icon: "/favicon.ico", // This sets the favicon
   },
 };
 
