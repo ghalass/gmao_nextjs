@@ -1,7 +1,7 @@
 pnpm create next-app@latest gmao
 
 pnpm dlx shadcn@latest init
-pnpm dlx shadcn@latest add button scroll-area tabs
+pnpm dlx shadcn@latest add button scroll-area tabs progress
 pnpm add next-themes
 
 pnpm add prisma @types/node @types/pg --save-dev
@@ -18,6 +18,7 @@ pnpm add -D ts-node typescript
 pnpm add iron-session
 pnpm add @tanstack/react-form
 pnpm add recharts
+pnpm add -D @types/xlsx
 
 ---
 
