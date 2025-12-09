@@ -35,5 +35,5 @@ pnpm build
 echo "🔄 Redémarrage de l'application..."
 pm2 restart gmao-app
 
-# Fini
+# Fini !!!
 echo "✅ Déploiement terminé avec succès!"
