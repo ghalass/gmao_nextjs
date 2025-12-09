@@ -9,6 +9,9 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { useAuth } from "@/hooks/useAuth";
+import { getSession } from "@/lib/auth";
+import { isAdmin, isSuperAdmin } from "@/lib/rbac/core";
 
 const the_resource = "user";
 
@@ -292,6 +295,41 @@ export async function DELETE(
 
     // Vérifier si l'utilisateur tente de se supprimer lui-même
     const authHeader = request.headers.get("authorization");
+    const session = await getSession();
+
+    const connectedUser = session?.userId;
+    // const connectedUser_is_Admin = await isAdmin(connectedUser);
+    const connectedUser_is_SuperAdmin = await isSuperAdmin(connectedUser);
+    const toDelete_SuperAdmin = await isSuperAdmin(id); // utilisateur qui sera supprimer isSuperAdmin ?
+    const toDelete_Admin = await isAdmin(id); // utilisateur qui sera supprimer isAdmin ?
+
+    // interdire de supprimer votre propre compte
+    if (connectedUser === id) {
+      return NextResponse.json(
+        { message: "Vous ne pouvez pas supprimer votre propre compte." },
+        { status: 400 }
+      );
+    }
+
+    // interdire aux utilisateurs non super-admin de supprimer un super-admin
+    if (toDelete_SuperAdmin && !connectedUser_is_SuperAdmin) {
+      return NextResponse.json(
+        { message: "Vous ne pouvez pas supprimer un compte d'un super admin." },
+        { status: 400 }
+      );
+    }
+
+    // seul super-admin peut suprimer un admin
+    if (toDelete_Admin && !connectedUser_is_SuperAdmin) {
+      return NextResponse.json(
+        {
+          message:
+            "Vous ne pouvez pas supprimer un compte d'un admin, seul un super admin peut suprimer un admin.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (authHeader) {
       try {
         const token = authHeader.replace("Bearer ", "");
