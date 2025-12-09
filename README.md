@@ -31,3 +31,4 @@ chmod +x deploy.sh
 # POUR CREER UN SUPER USER, ALLEZ A CE LIEN
 
 http://localhost:3000/api/users/create_super_admin
+https://gmao.ghalass.com/api/users/create_super_admin

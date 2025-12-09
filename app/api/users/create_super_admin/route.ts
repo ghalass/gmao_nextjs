@@ -60,8 +60,14 @@ export async function GET() {
       },
     });
 
+    const createdSuperAdmin = {
+      name: newUser.name,
+      email: newUser.email,
+      roles: newUser.roles,
+    };
+
     return NextResponse.json(
-      { message: "Super admin créé avec succès", user: newUser },
+      { message: "Super admin créé avec succès", user: createdSuperAdmin },
       { status: 201 }
     );
   } catch (error) {
