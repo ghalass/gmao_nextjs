@@ -19,6 +19,7 @@ import {
   Gauge,
   Puzzle,
   Form,
+  FileUpIcon,
 } from "lucide-react";
 
 import {
@@ -140,6 +141,12 @@ const adminItems = [
     url: "/permissions",
     icon: ShieldUser,
     description: "Gérer les permissions",
+  },
+  {
+    title: "Importations",
+    url: "/importations",
+    icon: FileUpIcon,
+    description: "Gérer les importations",
   },
 ];
 
