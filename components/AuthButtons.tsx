@@ -127,19 +127,6 @@ export default function AuthButtons() {
               <span>Mon profil</span>
             </Link>
           </DropdownMenuItem>
-          {userDetail.roleNames?.includes("admin") && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/admin"
-                  className="cursor-pointer flex items-center gap-2"
-                >
-                  <span>Administration</span>
-                </Link>
-              </DropdownMenuItem>
-            </>
-          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             asChild
