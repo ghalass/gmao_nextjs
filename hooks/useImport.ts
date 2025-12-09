@@ -29,11 +29,19 @@ const importData = async ({
     body: JSON.stringify({ sheetName, data }),
   });
 
+  const responseData = await response.json();
+
+  // Si le statut HTTP n'est pas 200-299
   if (!response.ok) {
-    throw new Error("Erreur lors de l'importation");
+    // Utiliser le message de l'API s'il existe
+    const errorMessage =
+      responseData.message ||
+      responseData.error ||
+      `Erreur ${response.status} lors de l'importation`;
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  return responseData;
 };
 
 export const useImport = () => {
@@ -42,7 +50,6 @@ export const useImport = () => {
   return useMutation({
     mutationFn: importData,
     onSuccess: () => {
-      // Rafraîchir les données si nécessaire
       queryClient.invalidateQueries({ queryKey: ["importList"] });
     },
   });

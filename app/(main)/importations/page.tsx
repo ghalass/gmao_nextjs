@@ -1,7 +1,7 @@
 // app/importations/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { useImport } from "@/hooks/useImport";
 import {
@@ -228,17 +228,14 @@ export default function ImportPage() {
         const formattedData = formatRowData(rowData, headers, selectedSheet);
 
         if (Object.keys(formattedData).length === 0) {
-          setTimeout(() => {
-            const result = {
-              success: false,
-              message: `Ligne ${index + 1} ignorée (données vides)`,
-              data: null,
-            };
-            setProcessingResults((prev) => ({ ...prev, [index]: result }));
-            detailedResults.push(result);
-            failedRows++;
-          }, 500);
-
+          const result = {
+            success: false,
+            message: `Ligne ${index + 1} ignorée (données vides)`,
+            data: null,
+          };
+          setProcessingResults((prev) => ({ ...prev, [index]: result }));
+          detailedResults.push(result);
+          failedRows++;
           continue;
         }
 
@@ -251,15 +248,36 @@ export default function ImportPage() {
           setProcessingResults((prev) => ({ ...prev, [index]: result }));
           detailedResults.push(result);
 
-          if (result.success) {
-            successfulRows++;
+          // CORRECTION ICI : Analyser le tableau data pour déterminer le succès réel
+          let rowSuccess = false;
+          let rowFailed = false;
+
+          if (result.data && Array.isArray(result.data)) {
+            // Si data est un tableau, vérifier chaque élément
+            const allSuccess = result.data.every(
+              (item: any) => item?.success === true
+            );
+            const anyFailure = result.data.some(
+              (item: any) => item?.success === false
+            );
+
+            rowSuccess = allSuccess && result.data.length > 0;
+            rowFailed = anyFailure;
           } else {
+            // Sinon, utiliser le success global
+            rowSuccess = result.success === true;
+            rowFailed = result.success === false;
+          }
+
+          if (rowSuccess) {
+            successfulRows++;
+          } else if (rowFailed) {
             failedRows++;
           }
         } catch (error: any) {
           const result = {
             success: false,
-            message: `Erreur ligne ${index + 1}: ${error.message}`,
+            message: error.message,
             data: null,
           };
           setProcessingResults((prev) => ({ ...prev, [index]: result }));
@@ -274,20 +292,26 @@ export default function ImportPage() {
       setCurrentProcessingRow(-1);
       setIsLoading(false);
 
-      if (successfulRows === totalRows) {
+      // CORRECTION : Afficher le message final basé sur le vrai succès
+      if (failedRows === 0 && successfulRows > 0) {
         setMessage({
           type: "success",
-          text: `Traitement terminé avec succès ! ${successfulRows} ligne(s) importée(s)`,
+          text: `Traitement terminé avec succès ! ${successfulRows} ligne(s) importée(s) sans erreur`,
         });
-      } else if (successfulRows > 0) {
+      } else if (successfulRows > 0 && failedRows > 0) {
         setMessage({
           type: "warning",
-          text: `Traitement partiellement réussi : ${successfulRows} succès, ${failedRows} échecs.`,
+          text: `Traitement partiellement réussi : ${successfulRows} succès, ${failedRows} échec(s).`,
+        });
+      } else if (failedRows > 0) {
+        setMessage({
+          type: "error",
+          text: `Échec complet du traitement : ${failedRows} échec(s).`,
         });
       } else {
         setMessage({
-          type: "error",
-          text: `Échec du traitement : ${failedRows} échecs.`,
+          type: "info",
+          text: `Traitement terminé sans lignes traitées.`,
         });
       }
     } catch (error: any) {
@@ -303,10 +327,22 @@ export default function ImportPage() {
 
   const getStatusText = (rowIndex: number) => {
     if (currentProcessingRow === rowIndex) return "En traitement...";
-    if (processingResults[rowIndex]) {
-      return processingResults[rowIndex]?.data[0]?.success ? "Succès" : "Échec";
-    }
-    return "En attente";
+
+    const rowResult = processingResults[rowIndex];
+    if (!rowResult) return "En attente";
+
+    // Vérifier le succès dans différentes structures
+    const success =
+      // Cas 1: {success: true, data: [...]}
+      rowResult.success === true ||
+      // Cas 2: {data: [{success: true}, ...]}
+      (Array.isArray(rowResult.data) &&
+        rowResult.data.length > 0 &&
+        rowResult.data[0]?.success === true) ||
+      // Cas 3: {success: true} (sans data)
+      rowResult.success;
+
+    return success ? "Succès" : "Échec";
   };
 
   const isAdminOrSuperAdmin =
@@ -475,77 +511,132 @@ export default function ImportPage() {
                         </TableHead>
                       </TableRow>
                     </TableHeader>
+
+                    {/*  */}
                     <TableBody>
-                      {tableData.map((row, rowIndex) => (
-                        <TableRow
-                          key={rowIndex}
-                          className={
-                            currentProcessingRow === rowIndex
-                              ? "bg-primary/10 dark:bg-primary/20"
-                              : ""
+                      {tableData.map((row, rowIndex) => {
+                        const rowResult = processingResults[rowIndex];
+                        const isProcessing = currentProcessingRow === rowIndex;
+
+                        // Déterminer le statut BASÉ SUR LE DATA, PAS LE SUCCESS GLOBAL
+                        let status = "En attente";
+                        let isSuccess = false;
+
+                        if (isProcessing) {
+                          status = "En traitement...";
+                        } else if (rowResult) {
+                          // VÉRIFIER D'ABORD LE DATA ARRAY POUR DÉTERMINER LE SUCCÈS RÉEL
+                          if (rowResult.data && Array.isArray(rowResult.data)) {
+                            // Si data est un tableau, vérifier le succès de chaque élément
+                            const allItemsSuccessful = rowResult.data.every(
+                              (item: any) => item?.success === true
+                            );
+                            const anyItemFailed = rowResult.data.some(
+                              (item: any) => item?.success === false
+                            );
+
+                            if (allItemsSuccessful) {
+                              status = "Succès";
+                              isSuccess = true;
+                            } else if (anyItemFailed) {
+                              status = "Échec";
+                              isSuccess = false;
+                            }
+                          } else {
+                            // Si pas de data array, utiliser le success global comme fallback
+                            if (rowResult.success === true) {
+                              status = "Succès";
+                              isSuccess = true;
+                            } else if (rowResult.success === false) {
+                              status = "Échec";
+                              isSuccess = false;
+                            }
                           }
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {currentProcessingRow === rowIndex && (
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                              )}
-                              <Badge
-                                variant={
-                                  currentProcessingRow === rowIndex
-                                    ? "secondary"
-                                    : processingResults[rowIndex]?.data[0]
-                                        ?.success
-                                    ? "default"
-                                    : "destructive"
-                                }
-                                className="font-medium"
+                        }
+
+                        return (
+                          <TableRow
+                            key={rowIndex}
+                            className={
+                              isProcessing
+                                ? "bg-primary/10 dark:bg-primary/20"
+                                : ""
+                            }
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {isProcessing && (
+                                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                )}
+                                <Badge
+                                  variant={
+                                    isProcessing
+                                      ? "secondary"
+                                      : isSuccess
+                                      ? "default"
+                                      : "destructive"
+                                  }
+                                  className="font-medium"
+                                >
+                                  {status}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            {headers.map((header, cellIndex) => (
+                              <TableCell
+                                key={cellIndex}
+                                className="text-foreground"
                               >
-                                {getStatusText(rowIndex)}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          {headers.map((header, cellIndex) => (
-                            <TableCell
-                              key={cellIndex}
-                              className="text-foreground"
-                            >
-                              {row[cellIndex] !== undefined &&
-                              row[cellIndex] !== null &&
-                              row[cellIndex] !== "" ? (
-                                row[cellIndex]
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
+                                {row[cellIndex] !== undefined &&
+                                row[cellIndex] !== null &&
+                                row[cellIndex] !== "" ? (
+                                  row[cellIndex]
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            ))}
+                            <TableCell>
+                              {rowResult && (
+                                <div
+                                  className={
+                                    isSuccess
+                                      ? "text-green-600 dark:text-green-400"
+                                      : "text-destructive"
+                                  }
+                                >
+                                  {/* Afficher le message global */}
+                                  <p className="text-sm font-medium">
+                                    {rowResult.message}
+                                  </p>
+
+                                  {/* Afficher les messages d'erreur détaillés du data array */}
+                                  {rowResult.data &&
+                                    Array.isArray(rowResult.data) && (
+                                      <div className="mt-1 space-y-1">
+                                        {rowResult.data
+                                          .filter(
+                                            (item: any) =>
+                                              item && item.success === false
+                                          )
+                                          .map((item: any, idx: number) => (
+                                            <p key={idx} className="text-sm">
+                                              {item.message}
+                                            </p>
+                                          ))}
+                                      </div>
+                                    )}
+                                </div>
                               )}
                             </TableCell>
-                          ))}
-                          <TableCell>
-                            {processingResults[rowIndex] && (
-                              <div
-                                className={
-                                  processingResults[rowIndex]?.data[0]?.success
-                                    ? "text-green-600 dark:text-green-400"
-                                    : "text-destructive"
-                                }
-                              >
-                                <p className="text-sm font-medium">
-                                  {processingResults[rowIndex]?.message}
-                                </p>
-                                {!processingResults[rowIndex]?.data[0]
-                                  ?.success && (
-                                  <p className="text-sm mt-1">
-                                    {
-                                      processingResults[rowIndex]?.data[0]
-                                        ?.message
-                                    }
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
+
+                    {/*  */}
                   </Table>
                 </div>
               </div>

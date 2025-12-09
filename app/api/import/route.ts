@@ -4,7 +4,7 @@ import { ImportService } from "./services/importService";
 
 export async function POST(request: NextRequest) {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     const { sheetName, data } = await request.json();
 
     if (!sheetName || !data) {
