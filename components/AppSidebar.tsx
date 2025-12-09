@@ -48,12 +48,6 @@ const mainItems = [
     icon: Home,
     description: "Tableau de bord principal",
   },
-  {
-    title: "À propos",
-    url: "/about",
-    icon: InfoIcon,
-    description: "Informations sur l'application",
-  },
 ];
 
 const configItems = [
