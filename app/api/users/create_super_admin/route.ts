@@ -11,7 +11,7 @@ export async function GET() {
       name: "ghalass",
       email: "ghalass@ghalass.com",
       password: "super@dmin",
-      roles: ["super admin"], // Changé de "super admin2" à "super admin"
+      roles: ["super admin"],
       active: true,
     };
 
