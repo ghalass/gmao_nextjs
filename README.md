@@ -19,17 +19,3 @@ pnpm add iron-session
 pnpm add @tanstack/react-form
 pnpm add recharts
 pnpm add -D @types/xlsx
-
----
-
-ssh root@147.79.118.72
-Gh@l@s2025-1986
-
-./deploy.sh
-
-chmod +x deploy.sh
-
-# POUR CREER UN SUPER USER, ALLEZ A CE LIEN
-
-http://localhost:3000/api/users/create_super_admin
-https://gmao.ghalass.com/api/users/create_super_admin
