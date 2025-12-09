@@ -101,16 +101,16 @@ const saisieItems = [
 
 const backlogItems = [
   {
-    title: "Backlog",
-    url: "/anomalies",
-    icon: Wrench,
-    description: "Gestion des anomalies",
-  },
-  {
     title: "Dashboard",
     url: "/anomalies/stats",
     icon: Gauge,
     description: "Dashboard",
+  },
+  {
+    title: "Backlog",
+    url: "/anomalies",
+    icon: Wrench,
+    description: "Gestion des anomalies",
   },
 ];
 
