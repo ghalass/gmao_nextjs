@@ -54,8 +54,8 @@ export default function LoginPage() {
   // ✅ Configuration du formulaire TanStack avec validation
   const form = useForm({
     defaultValues: {
-      email: "test@snim.com",
-      password: "123456",
+      email: "",
+      password: "",
     },
     onSubmit: async ({ value }) => {
       try {
