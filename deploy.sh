@@ -9,6 +9,12 @@ cd /var/www/gmao_nextjs
 echo "📥 Récupération des dernières modifications..."
 git pull origin main
 
+# Nettoyer les anciens builds
+echo "🔄 Nettoyer les anciens builds..."
+rm -rf .next
+rm -rf node_modules/.cache
+rm -rf /var/log/pm2/gmao-*.log 2>/dev/null || true
+
 # Installer les dépendances
 echo "📦 Installation des dépendances..."
 pnpm install
@@ -27,10 +33,7 @@ pnpm build
 
 # Redémarrer l'application avec PM2
 echo "🔄 Redémarrage de l'application..."
-pm2 restart gmao_nextjs
+pm2 restart gmao-app
 
-# Voir logs avec PM2
-echo "🔄 Logs de l'application..."
-pm2 logs gmao_nextjs
-
+# Fini
 echo "✅ Déploiement terminé avec succès!"
