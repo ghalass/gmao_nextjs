@@ -16,6 +16,9 @@ import {
   Tractor,
   Car,
   FormInputIcon,
+  Gauge,
+  Puzzle,
+  Form,
 } from "lucide-react";
 
 import {
@@ -105,14 +108,23 @@ const backlogItems = [
   {
     title: "Backlog",
     url: "/anomalies",
-    icon: Truck,
+    icon: Wrench,
     description: "Gestion des anomalies",
   },
   {
     title: "Dashboard",
     url: "/anomalies/stats",
-    icon: Truck,
+    icon: Gauge,
     description: "Dashboard",
+  },
+];
+
+const gestionOrganesItems = [
+  {
+    title: "Organes",
+    url: "/organes",
+    icon: Form,
+    description: "Gestion des organes",
   },
 ];
 
@@ -246,7 +258,7 @@ export function AppSidebar() {
                       tooltip="Administration du système"
                     >
                       <div className="flex items-center gap-2">
-                        <FormInputIcon className="w-4 h-4" />
+                        <Wrench className="w-4 h-4" />
                         <span>Backlogs</span>
                       </div>
                       <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
@@ -257,6 +269,55 @@ export function AppSidebar() {
                     <SidebarMenuSub className="mt-1">
                       <SidebarMenuSubItem>
                         {backlogItems.map((item) => {
+                          const isActive = isActivePath(item.url);
+                          return (
+                            <SidebarMenuButton
+                              key={item.title}
+                              asChild
+                              isActive={isActive}
+                              className={cn(
+                                "pl-4 transition-all duration-200 hover:bg-accent",
+                                isActive &&
+                                  "bg-accent text-accent-foreground font-medium"
+                              )}
+                              tooltip={item.description}
+                            >
+                              <Link href={item.url}>
+                                <item.icon className="w-4 h-4" />
+                                <span>{item.title}</span>
+                                {isActive && (
+                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
+                                )}
+                              </Link>
+                            </SidebarMenuButton>
+                          );
+                        })}
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* gestionOrganesItems */}
+              <Collapsible className="group/collapsible" defaultOpen={false}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      className="w-full justify-between hover:bg-accent transition-all duration-200"
+                      tooltip="Administration du système"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="w-4 h-4" />
+                        <span>Gestion des organes</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="CollapsibleContent">
+                    <SidebarMenuSub className="mt-1">
+                      <SidebarMenuSubItem>
+                        {gestionOrganesItems.map((item) => {
                           const isActive = isActivePath(item.url);
                           return (
                             <SidebarMenuButton
