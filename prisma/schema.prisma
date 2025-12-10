@@ -308,7 +308,7 @@ model Objectif {
 }
 
 model Anomalie {
-  id            String         @id @default(uuid())
+  id            String         @id @default(cuid())
   numeroBacklog String         @unique // TO14-25-001, TO14-25-002, etc.
   dateDetection DateTime
   description   String
@@ -344,7 +344,7 @@ model Anomalie {
 }
 
 model HistoriqueStatutAnomalie {
-  id             String         @id @default(uuid())
+  id             String         @id @default(cuid())
   anomalieId     String
   ancienStatut   StatutAnomalie
   nouveauStatut  StatutAnomalie

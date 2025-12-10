@@ -44,13 +44,8 @@ export async function GET(request: NextRequest, context: Context) {
             },
           },
         },
-        site: {
-          select: {
-            id: true,
-            name: true,
-            active: true,
-          },
-        },
+        site: true,
+        anomalies: true,
         // CORRECTION: Il n'y a pas de relation directe "pannes" dans Engin
         // Supprimez ou modifiez cette section
         saisiehim: {

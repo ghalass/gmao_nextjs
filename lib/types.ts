@@ -163,10 +163,24 @@ export interface Engin {
   parcId: string;
   siteId: string;
   initialHeureChassis?: number;
+  createdAt?: string;
+  updatedAt?: string;
 
   // Relations
-  parc?: Parc;
-  site?: Site;
+  parc?: {
+    id: string;
+    name: string;
+    typeparcId: string;
+    typeparc?: {
+      id: string;
+      name: string;
+    };
+  };
+  site?: {
+    id: string;
+    name: string;
+    active: boolean;
+  };
   saisiehrm?: Saisiehrm[];
   saisiehim?: Saisiehim[];
   anomalies?: Anomalie[];

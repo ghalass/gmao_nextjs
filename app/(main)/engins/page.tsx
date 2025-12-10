@@ -34,6 +34,7 @@ import {
   X,
   Download,
   Truck,
+  Eye,
 } from "lucide-react";
 import { EnginModal } from "@/components/engins/EnginModal";
 import { DeleteEnginModal } from "@/components/engins/DeleteEnginModal";
@@ -44,6 +45,7 @@ import { exportExcel } from "@/lib/xlsxFn";
 import { useParcs } from "@/hooks/useParcs";
 import { useSites } from "@/hooks/useSites";
 import { useTypeparcs } from "@/hooks/useTypeparcs";
+import { useRouter } from "next/navigation";
 
 type SortField = "name" | "parc" | "site" | "status";
 type SortDirection = "asc" | "desc";
@@ -56,6 +58,7 @@ interface ColumnFilters {
 }
 
 export default function EnginsPage() {
+  const router = useRouter();
   const { enginsQuery, createEngin, updateEngin, deleteEngin } = useEngins();
 
   const { parcsQuery } = useParcs();
@@ -90,6 +93,10 @@ export default function EnginsPage() {
     site: null,
     status: null,
   });
+
+  const handleViewDetails = (engin: Engin): void => {
+    router.push(`/engins/${engin.id}`);
+  };
 
   const handleCreate = (): void => {
     setSelectedEngin(null);
@@ -595,16 +602,20 @@ export default function EnginsPage() {
               </TableRow>
             ) : (
               paginatedEngins.map((engin: Engin) => (
-                <TableRow key={engin?.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">{engin?.name}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{engin?.parc?.name}</div>
-                      <Badge variant="outline" className="text-xs mt-1">
+                <TableRow
+                  key={engin?.id}
+                  className="hover:bg-muted/50 cursor-pointer hover:bg-muted"
+                  onClick={() => handleViewDetails(engin)}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {engin?.name}
+                      <Badge variant="outline" className="text-xs">
                         {engin?.parc?.typeparc?.name || "N/A"}
                       </Badge>
                     </div>
                   </TableCell>
+                  <TableCell>{engin?.parc?.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{engin?.site?.name}</Badge>
                   </TableCell>
@@ -615,12 +626,25 @@ export default function EnginsPage() {
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
+                    <div
+                      className="flex justify-end gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(engin)}
+                        className="h-8 w-8 p-0"
+                        title="Voir les détails"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(engin)}
                         className="h-8 w-8 p-0"
+                        title="Modifier"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -629,6 +653,7 @@ export default function EnginsPage() {
                         size="sm"
                         onClick={() => handleDelete(engin)}
                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        title="Supprimer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
