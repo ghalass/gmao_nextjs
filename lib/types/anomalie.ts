@@ -102,10 +102,26 @@ export interface AnomalieWithRelations extends Anomalie {
   engin: {
     id: string;
     name: string;
+    active: boolean;
+    parcId: string;
+    siteId: string;
+    initialHeureChassis: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+    parc: {
+      id: string;
+      name: string;
+      typeparcId: string;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   };
   site: {
     id: string;
     name: string;
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   };
   historiqueStatutAnomalies: HistoriqueStatutAnomalie[];
 }

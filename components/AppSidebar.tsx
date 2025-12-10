@@ -118,7 +118,7 @@ const gestionOrganesItems = [
   {
     title: "Organes",
     url: "/organes",
-    icon: Form,
+    icon: FormInputIcon,
     description: "Gestion des organes",
   },
 ];
@@ -207,7 +207,7 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Administration du système"
+                      tooltip="Saisies"
                     >
                       <div className="flex items-center gap-2">
                         <FormInputIcon className="w-4 h-4" />
@@ -256,7 +256,7 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Administration du système"
+                      tooltip="Backlogs"
                     >
                       <div className="flex items-center gap-2">
                         <Wrench className="w-4 h-4" />
@@ -305,11 +305,11 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Administration du système"
+                      tooltip="Gestion des organes"
                     >
                       <div className="flex items-center gap-2">
                         <Puzzle className="w-4 h-4" />
-                        <span>Gestion des organes</span>
+                        <span>Organes</span>
                       </div>
                       <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
                     </SidebarMenuButton>
@@ -354,7 +354,7 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Paramètres et configurations"
+                      tooltip="Configurations"
                     >
                       <div className="flex items-center gap-2">
                         <Settings className="w-4 h-4" />

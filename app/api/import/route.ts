@@ -20,15 +20,15 @@ export async function POST(request: NextRequest) {
     const importService = new ImportService();
     const results = await importService.importData(sheetName, data);
 
-    const successCount = results.filter((r: any) => r.success).length;
-    const errorCount = results.filter((r: any) => !r.success).length;
+    const successCount = results?.filter((r: any) => r.success).length;
+    const errorCount = results?.filter((r: any) => !r.success).length;
 
     return NextResponse.json({
       success: true,
       message: `Import terminé: ${successCount} succès, ${errorCount} erreurs`,
       data: results,
       summary: {
-        total: results.length,
+        total: results?.length,
         success: successCount,
         errors: errorCount,
       },

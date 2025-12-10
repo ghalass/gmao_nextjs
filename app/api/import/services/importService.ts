@@ -1,6 +1,30 @@
 // app/api/import/services/importService.ts
-import { convertField } from "@/lib/convertField";
+import { convertField, isValidFormat } from "@/lib/convertField";
 import { prisma } from "@/lib/prisma";
+
+enum SourceAnomalie {
+  VS = "VS",
+  VJ = "VJ",
+  INSPECTION = "INSPECTION",
+  AUTRE = "AUTRE",
+}
+// VS;VJ;INSPECTION;AUTRE
+
+enum Priorite {
+  ELEVEE = "ELEVEE",
+  MOYENNE = "MOYENNE",
+  FAIBLE = "FAIBLE",
+}
+
+enum StatutAnomalie {
+  ATTENTE_PDR = "ATTENTE_PDR",
+  PDR_PRET = "PDR_PRET",
+  NON_PROGRAMMEE = "NON_PROGRAMMEE",
+  PROGRAMMEE = "PROGRAMMEE",
+  EXECUTE = "EXECUTE",
+}
+
+// ATTENTE_PDR;PDR_PRET;NON_PROGRAMMEE;PROGRAMMEE;EXECUTE
 
 export class ImportService {
   async importData(sheetName: string, data: any) {
@@ -36,6 +60,8 @@ export class ImportService {
         // return await this.importRoles(data);
         case "users":
           return await this.importUsers(data);
+        case "anomalies":
+          return await this.importAnomalies(data);
         default:
           throw new Error(`Onglet non supporté: ${sheetName}`);
       }
@@ -349,6 +375,218 @@ export class ImportService {
           success: true,
           data: user,
           message: `User ${name} importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
+  async importAnomalies(data: any) {
+    try {
+      const numeroBacklog = convertField(data.numeroBacklog, "string");
+      const dateDetection = convertField(data.dateDetection, "date");
+      const description = convertField(data.description, "string");
+      const source: SourceAnomalie = convertField(data.source, "string");
+      const priorite: Priorite = convertField(data.priorite, "string");
+      const besoinPDR = convertField(data.besoinPDR, "boolean") || false;
+      const quantite = convertField(data.quantite, "int") || 0; // optionnel
+      const reference = convertField(data.reference, "string") || ""; // optionnel
+      const code = convertField(data.code, "string") || ""; // optionnel
+      const stock = convertField(data.stock, "string") || ""; // optionnel
+      const numeroBS = convertField(data.numeroBS, "string") || ""; // optionnel
+      const programmation = convertField(data.programmation, "string") || ""; // optionnel
+      const sortiePDR = convertField(data.sortiePDR, "string") || ""; // optionnel
+      const equipe = convertField(data.equipe, "string") || ""; // optionnel
+      const statut: StatutAnomalie = convertField(data.statut, "string");
+      const dateExecution = convertField(data.dateExecution, "date"); // optionnel
+      const confirmation = convertField(data.confirmation, "string") || ""; // optionnel
+      const observations = convertField(data.observations, "string") || ""; // optionnel
+      // Relations
+      const enginName = convertField(data.enginName, "string");
+      const siteName = convertField(data.siteName, "string");
+
+      // if (data.numeroBacklog === "TO14-25-374") {
+      //   console.log(`data.equipe:`, data.equipe);
+      //   console.log(`equipe:`, equipe);
+      // }
+
+      if (!numeroBacklog || numeroBacklog.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'numeroBacklog' est requis`,
+          },
+        ];
+      }
+      // exemple: TO14-25-001
+      if (!isValidFormat(numeroBacklog)) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Le numéro de backlog "${numeroBacklog}" ne respecte pas le format attendu. Format: XXXX-XX-XXXX... (1-10 lettres, 2 chiffres, 1+ chiffres), exemple TO14-25-001`,
+          },
+        ];
+      }
+      if (!dateDetection) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'dateDetection' est requis`,
+          },
+        ];
+      }
+      if (!description || description.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'description' est requis`,
+          },
+        ];
+      }
+      if (!enginName || enginName.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'enginName' est requis`,
+          },
+        ];
+      }
+      if (!siteName || siteName.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'siteName' est requis`,
+          },
+        ];
+      }
+      //
+      if (
+        !source ||
+        !Object.values(SourceAnomalie).includes(source as SourceAnomalie)
+      ) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'source' est requis et doit être une valeur valide (VS, VJ, INSPECTION, AUTRE)`,
+          },
+        ];
+      }
+      if (
+        !priorite ||
+        !Object.values(Priorite).includes(priorite as Priorite)
+      ) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'priorite' est requis et doit être une valeur valide (ELEVEE, MOYENNE, FAIBLE)`,
+          },
+        ];
+      }
+      if (
+        !statut ||
+        !Object.values(StatutAnomalie).includes(statut as StatutAnomalie)
+      ) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'statut' est requis et doit être une valeur valide (ATTENTE_PDR, PDR_PRET, NON_PROGRAMMEE, PROGRAMMEE, EXECUTE)`,
+          },
+        ];
+      }
+
+      const [engin, site] = await Promise.all([
+        prisma.engin.findUnique({ where: { name: enginName } }),
+        prisma.site.findUnique({ where: { name: siteName } }),
+      ]);
+
+      if (!engin) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Engin "${enginName}" non trouvé`,
+          },
+        ];
+      }
+      if (!site) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Site "${siteName}" non trouvé`,
+          },
+        ];
+      }
+
+      await prisma.anomalie.upsert({
+        where: { numeroBacklog: numeroBacklog },
+        update: {
+          numeroBacklog: numeroBacklog,
+          dateDetection: dateDetection,
+          description: description,
+          source: source,
+          priorite: priorite,
+          besoinPDR: besoinPDR,
+          quantite: quantite,
+          reference: reference,
+          code: code,
+          stock: stock,
+          numeroBS: numeroBS,
+          programmation: programmation,
+          sortiePDR: sortiePDR,
+          equipe: equipe,
+          statut: statut,
+          dateExecution: dateExecution,
+          confirmation: confirmation,
+          observations: observations,
+          enginId: engin.id,
+          siteId: site.id,
+        },
+        create: {
+          numeroBacklog: numeroBacklog,
+          dateDetection: dateDetection,
+          description: description,
+          source: source,
+          priorite: priorite,
+          besoinPDR: besoinPDR,
+          quantite: quantite,
+          reference: reference,
+          code: code,
+          stock: stock,
+          numeroBS: numeroBS,
+          programmation: programmation,
+          sortiePDR: sortiePDR,
+          equipe: equipe,
+          statut: statut,
+          dateExecution: dateExecution,
+          confirmation: confirmation,
+          observations: observations,
+          enginId: engin.id,
+          siteId: site.id,
+        },
+      });
+
+      return [
+        {
+          success: true,
+          data: engin,
+          message: `Engin ${numeroBacklog} importé avec succès`,
         },
       ];
     } catch (error: any) {

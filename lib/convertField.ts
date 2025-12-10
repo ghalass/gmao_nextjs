@@ -5,29 +5,66 @@ const parseExcelDate = (value: any): Date | null => {
   }
 
   if (typeof value === "string") {
-    const date = new Date(value);
-    if (!isNaN(date.getTime())) {
-      return date;
+    const trimmed = value.trim();
+
+    // Format DD/MM/YYYY
+    if (trimmed.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+      const [day, month, year] = trimmed.split("/").map(Number);
+      const date = new Date(year, month - 1, day);
+      return isNaN(date.getTime()) ? null : date;
     }
+
+    // Format DD-MM-YYYY
+    if (trimmed.match(/^\d{1,2}-\d{1,2}-\d{4}$/)) {
+      const [day, month, year] = trimmed.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    // Autres formats
+    const date = new Date(trimmed);
+    return isNaN(date.getTime()) ? null : date;
   }
 
-  const excelDateNumber = typeof value === "number" ? value : parseFloat(value);
-
-  if (isNaN(excelDateNumber)) {
-    return null;
+  // Conversion Excel uniquement si c'est vraiment un nombre Excel (> 0)
+  if (typeof value === "number" && value > 0) {
+    return convertExcelDate(value);
   }
 
-  const excelEpoch = new Date(1900, 0, 1);
-  const daysToAdd = excelDateNumber - (excelDateNumber > 60 ? 2 : 1);
+  return null;
+};
+// Fonction séparée pour la conversion Excel
+const convertExcelDate = (excelDateNumber: number): Date | null => {
+  // Excel date system: 1 = 1 janvier 1900
+  // Correction pour le bug Excel 1900 (qui pense que 1900 était bissextile)
+  const excelEpoch = new Date(1899, 11, 30); // 30 décembre 1899
 
-  const resultDate = new Date(
-    excelEpoch.getTime() + daysToAdd * 24 * 60 * 60 * 1000
+  // Pour les dates après le 28 février 1900, ajuster d'un jour
+  const offset = excelDateNumber > 60 ? 1 : 0;
+
+  const date = new Date(
+    excelEpoch.getTime() + (excelDateNumber - offset) * 24 * 60 * 60 * 1000
   );
 
-  return isNaN(resultDate.getTime()) ? null : resultDate;
+  // Gérer l'heure si présente (partie décimale)
+  const timeFraction = excelDateNumber - Math.floor(excelDateNumber);
+  if (timeFraction > 0) {
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    date.setTime(date.getTime() + timeFraction * millisecondsPerDay);
+  }
+
+  return isNaN(date.getTime()) ? null : date;
 };
 
+/**
+ *
+ * @param value
+ * @param fieldType : string | number | int | boolean | date
+ * @returns
+ */
 export const convertField = (value: any, fieldType: string = "string"): any => {
+  // console.log("#####################################");
+  // console.log(`value = ${value}, typeof value:${typeof value}`);
   if (value === null || value === undefined || value === "") {
     return null;
   }
@@ -58,6 +95,7 @@ export const convertField = (value: any, fieldType: string = "string"): any => {
             str === "vrai"
           );
         }
+
         return Boolean(value);
 
       case "date":
@@ -74,3 +112,8 @@ export const convertField = (value: any, fieldType: string = "string"): any => {
     return null;
   }
 };
+
+export function isValidFormat(code: string): boolean {
+  const regex = /^[A-Z0-9]{1,10}-\d{2}-\d+$/i;
+  return regex.test(code);
+}

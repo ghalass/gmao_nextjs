@@ -8,22 +8,18 @@ export interface Engin {
   active: boolean;
   parcId: string;
   siteId: string;
-  initialHeureChassis?: number;
-  createdAt: Date;
-  updatedAt: Date;
-
-  // Relations
+  initialHeureChassis: number;
+  createdAt: string;
+  updatedAt: string;
+  // Ajouter les données de parc si nécessaire
   parc?: {
     id: string;
     name: string;
+    typeparcId: string;
     typeparc?: {
       id: string;
       name: string;
     };
-  };
-  site?: {
-    id: string;
-    name: string;
   };
 }
 

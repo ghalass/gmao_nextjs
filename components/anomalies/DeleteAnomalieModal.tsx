@@ -21,13 +21,14 @@ interface DeleteAnomalieModalProps {
   onClose: () => void;
   anomalie: Anomalie | null;
   deleteAnomalie: any;
+  isDeleting?: boolean; // Ajoutez cette ligne
 }
-
 export function DeleteAnomalieModal({
   open,
   onClose,
   anomalie,
   deleteAnomalie,
+  isDeleting,
 }: DeleteAnomalieModalProps) {
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +53,7 @@ export function DeleteAnomalieModal({
     setError(null);
   };
 
-  const isSubmitting = deleteAnomalie.isPending;
+  const isSubmitting = deleteAnomalie.isPending || isDeleting;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

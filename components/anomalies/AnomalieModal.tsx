@@ -19,10 +19,10 @@ import { CalendarIcon, Clock, MapPin, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
-import { useAnomalies } from "@/hooks/useAnomalies";
+import { useAnomalie, useAnomalies } from "@/hooks/useAnomalies";
 import { useSites } from "@/hooks/useSites";
 import { useEngins } from "@/hooks/useEngins";
-import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
+import { StatutAnomalie, Priorite } from "@prisma/client";
 
 import { AnomalieForm } from "./AnomalieForm";
 import {
@@ -36,6 +36,7 @@ interface AnomalieModalProps {
   onClose: () => void;
   anomalie: Anomalie | null;
   mode: "create" | "edit" | "view";
+  onSuccess?: () => void; // Ajoutez cette ligne
 }
 
 export function AnomalieModal({
@@ -43,9 +44,12 @@ export function AnomalieModal({
   onClose,
   anomalie,
   mode,
+  onSuccess,
 }: AnomalieModalProps) {
   const [activeTab, setActiveTab] = useState("informations");
-  const { createAnomalie, updateAnomalie } = useAnomalies();
+  const { createAnomalie } = useAnomalies();
+  const { updateAnomalie } = useAnomalie();
+
   const { sitesQuery } = useSites();
   const { enginsQuery } = useEngins();
 
@@ -87,7 +91,6 @@ export function AnomalieModal({
 
   const handleSubmit = async (data: AnomalieFormData) => {
     try {
-      // Utiliser convertToAnomalieFormData pour s'assurer du bon type
       const formData = convertToAnomalieFormData(data);
 
       if (mode === "create") {
@@ -100,7 +103,13 @@ export function AnomalieModal({
         });
         toast.success("Anomalie modifiée avec succès");
       }
+
       onClose();
+
+      // Appeler onSuccess si fourni
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue");
     }

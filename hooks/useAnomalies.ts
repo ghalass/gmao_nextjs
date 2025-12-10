@@ -9,8 +9,101 @@ import {
   AnomalieWithRelations,
 } from "@/lib/types/anomalie";
 
-import { SourceAnomalie, Priorite, StatutAnomalie } from "@prisma/client";
+// Fonction séparée pour récupérer une anomalie par ID avec toutes les mutations
+export const useAnomalie = (id?: string) => {
+  const queryClient = useQueryClient();
 
+  const anomalieQuery = useQuery<AnomalieWithRelations>({
+    queryKey: ["anomalie", id],
+    queryFn: async (): Promise<AnomalieWithRelations> => {
+      if (!id) {
+        throw new Error("ID de l'anomalie requis");
+      }
+      const response = await fetch(`${API}/anomalies/${id}`);
+      const dataRes = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          dataRes.message || "Erreur lors du chargement de l'anomalie"
+        );
+      }
+      return dataRes;
+    },
+    enabled: !!id,
+  });
+
+  // Mutation pour mettre à jour l'anomalie
+  const updateAnomalie = useMutation<
+    Anomalie,
+    Error,
+    {
+      id: string;
+      data: Partial<AnomalieFormData> & {
+        commentaireChangementStatut?: string;
+      };
+    }
+  >({
+    mutationFn: async ({ id, data }): Promise<Anomalie> => {
+      const response = await fetch(`${API}/anomalies/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const dataRes = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          dataRes.message || "Erreur lors de la modification de l'anomalie"
+        );
+      }
+      return dataRes;
+    },
+    onSuccess: (data, variables) => {
+      // Invalider et rafraîchir toutes les requêtes pertinentes
+      queryClient.invalidateQueries({ queryKey: ["anomalie", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["anomalies"] });
+      queryClient.invalidateQueries({ queryKey: ["anomalieStats"] });
+
+      // Mettre à jour le cache directement pour une réactivité immédiate
+      queryClient.setQueryData(["anomalie", variables.id], data);
+    },
+  });
+
+  const deleteAnomalie = useMutation<void, Error, string>({
+    mutationFn: async (anomalieId: string): Promise<void> => {
+      const response = await fetch(`${API}/anomalies/${anomalieId}`, {
+        method: "DELETE",
+      });
+      const dataRes = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          dataRes.message || "Erreur lors de la suppression de l'anomalie"
+        );
+      }
+      return dataRes;
+    },
+    onSuccess: (_, id) => {
+      // Invalider toutes les requêtes après suppression
+      queryClient.invalidateQueries({ queryKey: ["anomalie", id] });
+      queryClient.invalidateQueries({ queryKey: ["anomalies"] });
+      queryClient.invalidateQueries({ queryKey: ["anomalieStats"] });
+
+      // Supprimer du cache
+      queryClient.removeQueries({ queryKey: ["anomalie", id] });
+    },
+  });
+
+  return {
+    anomalieQuery,
+    updateAnomalie,
+    deleteAnomalie,
+  };
+};
+
+// Fonction pour les anomalies avec filtres (version simplifiée)
 export const useAnomalies = (filters?: AnomalieFilters) => {
   const queryClient = useQueryClient();
 
@@ -33,6 +126,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
       const url = `${API}/anomalies${queryString ? `?${queryString}` : ""}`;
       const response = await fetch(url);
       const dataRes = await response.json();
+
       if (!response.ok) {
         throw new Error(
           dataRes.message || "Erreur lors du chargement des anomalies"
@@ -51,6 +145,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
       }`;
       const response = await fetch(url);
       const dataRes = await response.json();
+
       if (!response.ok) {
         throw new Error(
           dataRes.message || "Erreur lors du chargement des statistiques"
@@ -70,6 +165,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
         body: JSON.stringify(data),
       });
       const dataRes = await response.json();
+
       if (!response.ok) {
         throw new Error(
           dataRes.message || "Erreur lors de la création de l'anomalie"
@@ -83,77 +179,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     },
   });
 
-  const updateAnomalie = useMutation<
-    Anomalie,
-    Error,
-    {
-      id: string;
-      data: Partial<AnomalieFormData> & {
-        commentaireChangementStatut?: string;
-      };
-    }
-  >({
-    mutationFn: async ({ id, data }): Promise<Anomalie> => {
-      const response = await fetch(`${API}/anomalies/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      const dataRes = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          dataRes.message || "Erreur lors de la modification de l'anomalie"
-        );
-      }
-      return dataRes;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["anomalies"] });
-      queryClient.invalidateQueries({ queryKey: ["anomalieStats"] });
-    },
-  });
-
-  const deleteAnomalie = useMutation<void, Error, string>({
-    mutationFn: async (id: string): Promise<void> => {
-      const response = await fetch(`${API}/anomalies/${id}`, {
-        method: "DELETE",
-      });
-      const dataRes = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          dataRes.message || "Erreur lors de la suppression de l'anomalie"
-        );
-      }
-      return dataRes;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["anomalies"] });
-      queryClient.invalidateQueries({ queryKey: ["anomalieStats"] });
-    },
-  });
-
-  const getAnomalie = useQuery<AnomalieWithRelations>({
-    queryKey: ["anomalie", filters?.id],
-    queryFn: async (): Promise<AnomalieWithRelations> => {
-      if (!filters?.id) {
-        throw new Error("ID de l'anomalie requis");
-      }
-
-      const response = await fetch(`${API}/anomalies/${filters.id}`);
-      const dataRes = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          dataRes.message || "Erreur lors du chargement de l'anomalie"
-        );
-      }
-      return dataRes;
-    },
-    enabled: !!filters?.id,
-  });
-
-  // Evolution
+  // Types pour l'évolution
   interface EvolutionMensuelle {
     mois: string;
     moisComplet: string;
@@ -164,6 +190,20 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     nonProgrammées: number;
     pdrPret: number;
     tauxResolution: number;
+  }
+
+  interface EvolutionPeriodes {
+    mensuelle: number;
+    pourcentageMensuel: number;
+    pourcentageTrimestriel: number;
+    tendance: "hausse" | "baisse" | "stable";
+  }
+
+  interface ComparaisonMensuelle {
+    moisCourant: EvolutionMensuelle | null;
+    moisPrecedent: EvolutionMensuelle | null;
+    difference: number;
+    pourcentage: number;
   }
 
   interface EvolutionData {
@@ -204,7 +244,6 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     comparaisonMensuelle: ComparaisonMensuelle;
   }
 
-  // Ajouter à useAnomalies
   const evolutionQuery = useQuery<EvolutionData>({
     queryKey: ["anomalieEvolution", filters],
     queryFn: async (): Promise<EvolutionData> => {
@@ -214,6 +253,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
       }`;
       const response = await fetch(url);
       const dataRes = await response.json();
+
       if (!response.ok) {
         throw new Error(
           dataRes.message || "Erreur lors du chargement de l'évolution"
@@ -223,27 +263,10 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     },
   });
 
-  interface EvolutionPeriodes {
-    mensuelle: number;
-    pourcentageMensuel: number;
-    pourcentageTrimestriel: number;
-    tendance: "hausse" | "baisse" | "stable";
-  }
-
-  interface ComparaisonMensuelle {
-    moisCourant: EvolutionMensuelle | null;
-    moisPrecedent: EvolutionMensuelle | null;
-    difference: number;
-    pourcentage: number;
-  }
-
   return {
     anomaliesQuery,
     statsQuery,
     createAnomalie,
-    updateAnomalie,
-    deleteAnomalie,
-    getAnomalie,
     evolutionQuery,
   };
 };

@@ -34,18 +34,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
-// Configuration des en-têtes
-const REQUIRED_HEADERS = {
-  sites: ["name"],
-  typeparcs: ["name"],
-  parcs: ["name", "typeparcName"],
-  engins: ["name", "parcName", "siteName", "active", "initialHeureChassis"],
-  // ... autres configurations
-};
-
 const HEADER_MAPPINGS = {
   sites: {
-    name: "name",
+    name: "name!!",
     "Nom du Site": "name",
     Site: "name",
     Nom: "name",
@@ -140,28 +131,114 @@ export default function ImportPage() {
           return;
         }
 
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        // Option 1: Utiliser raw: true pour garder les valeurs brutes
+        const jsonData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+          header: 1,
+          raw: true, // ← IMPORTANT: Garder les valeurs brutes (pas de conversion auto)
+          defval: "", // Valeur par défaut pour les cellules vides
+          rawNumbers: true, // Garder les nombres comme nombres
+        });
 
-        // CORRECTION ICI : Typer explicitement jsonData
         if (Array.isArray(jsonData) && jsonData.length > 0) {
-          // La première ligne contient les en-têtes
-          const firstRow = jsonData[0] as any[];
+          const firstRow = jsonData[0];
           const headers = firstRow.map((header: any) => header || "");
 
-          // Les lignes suivantes sont les données
           const dataRows = jsonData.slice(1).filter((row: any) => {
             if (!Array.isArray(row)) return false;
-            return row.some(
-              (cell) => cell !== null && cell !== undefined && cell !== ""
-            );
-          }) as any[][];
+            return row.some((cell) => cell != null && cell !== "");
+          });
+
+          // Fonction améliorée pour convertir seulement les vraies dates Excel
+          const convertExcelToDate = (excelNumber: number): string | number => {
+            // Vérifier si c'est probablement une date Excel
+            // Les dates Excel typiques sont entre ~43000 (2017) et ~45000 (2023)
+            // Mais peuvent être plus anciennes (à partir de ~1000 pour 1902)
+            if (excelNumber < 1 || excelNumber > 100000) {
+              return excelNumber; // Pas une date Excel plausible
+            }
+
+            // Vérifier si c'est un entier (date sans heure) ou a une partie décimale (date avec heure)
+            const isDateLike = excelNumber >= 1 && excelNumber <= 50000;
+
+            if (isDateLike) {
+              try {
+                // Excel compte les jours depuis le 30 décembre 1899
+                const excelEpoch = new Date(1899, 11, 30);
+
+                // Correction pour le bug Excel (1900 considéré comme année bissextile)
+                const adjustedNumber =
+                  excelNumber > 60 ? excelNumber - 1 : excelNumber;
+
+                const date = new Date(
+                  excelEpoch.getTime() + adjustedNumber * 24 * 60 * 60 * 1000
+                );
+
+                // Vérifier si la date résultante est valide et raisonnable
+                const year = date.getFullYear();
+                if (year >= 1900 && year <= 2100) {
+                  return date.toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  });
+                }
+              } catch (e) {
+                // Si erreur de conversion, garder le nombre original
+              }
+            }
+
+            return excelNumber; // Retourner le nombre si pas une date valide
+          };
+
+          // Identifier les colonnes qui ne doivent PAS être converties en dates
+          const getNonDateColumnIndexes = (headers: string[]): number[] => {
+            const nonDateHeaders = [
+              "equipe",
+              "numero",
+              "numeroBacklog",
+              "n°",
+              "reference",
+              "code",
+              "id",
+              "matricule",
+            ];
+            return headers
+              .map((header, index) =>
+                nonDateHeaders.some((nonDate) =>
+                  header.toLowerCase().includes(nonDate.toLowerCase())
+                )
+                  ? index
+                  : -1
+              )
+              .filter((index) => index !== -1);
+          };
+
+          const nonDateColumnIndexes = getNonDateColumnIndexes(headers);
+
+          // Traiter les cellules de manière sélective
+          const processedDataRows = dataRows.map((row) =>
+            row.map((cell, cellIndex) => {
+              // Si c'est une colonne qui ne doit PAS être traitée comme date
+              if (nonDateColumnIndexes.includes(cellIndex)) {
+                // Toujours convertir en string pour ces colonnes
+                return cell != null ? String(cell) : "";
+              }
+
+              // Sinon, vérifier si c'est une date Excel
+              if (typeof cell === "number") {
+                return convertExcelToDate(cell);
+              }
+
+              return cell;
+            })
+          );
 
           setHeaders(headers);
-          setTableData(dataRows);
+          setTableData(processedDataRows);
 
           setMessage({
             type: "success",
-            text: `Onglet "${value}" chargé: ${dataRows.length} ligne(s) de données`,
+            text: `Onglet "${value}" chargé: ${processedDataRows.length} ligne(s) de données`,
           });
         } else {
           setHeaders([]);
@@ -197,6 +274,9 @@ export default function ImportPage() {
         formatted[mappedHeader as string] = row[index];
       }
     });
+    // console.log(`row:${row}`);
+    // console.log(`formatted:${JSON.stringify(formatted)}`);
+
     return formatted;
   };
 
@@ -498,6 +578,11 @@ export default function ImportPage() {
                         <TableHead className="w-[120px] font-semibold text-foreground">
                           Statut
                         </TableHead>
+                        <TableHead className="w-[300px] font-semibold text-foreground">
+                          Résultat
+                        </TableHead>
+
+                        {/*  */}
                         {headers.map((header, index) => (
                           <TableHead
                             key={index}
@@ -506,9 +591,6 @@ export default function ImportPage() {
                             {header || `Colonne ${index + 1}`}
                           </TableHead>
                         ))}
-                        <TableHead className="w-[300px] font-semibold text-foreground">
-                          Résultat
-                        </TableHead>
                       </TableRow>
                     </TableHeader>
 
@@ -563,6 +645,7 @@ export default function ImportPage() {
                                 : ""
                             }
                           >
+                            {/*  */}
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 {isProcessing && (
@@ -582,22 +665,7 @@ export default function ImportPage() {
                                 </Badge>
                               </div>
                             </TableCell>
-                            {headers.map((header, cellIndex) => (
-                              <TableCell
-                                key={cellIndex}
-                                className="text-foreground"
-                              >
-                                {row[cellIndex] !== undefined &&
-                                row[cellIndex] !== null &&
-                                row[cellIndex] !== "" ? (
-                                  row[cellIndex]
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
-                            ))}
+
                             <TableCell>
                               {rowResult && (
                                 <div
@@ -631,6 +699,23 @@ export default function ImportPage() {
                                 </div>
                               )}
                             </TableCell>
+
+                            {headers.map((header, cellIndex) => (
+                              <TableCell
+                                key={cellIndex}
+                                className="text-foreground"
+                              >
+                                {row[cellIndex] !== undefined &&
+                                row[cellIndex] !== null &&
+                                row[cellIndex] !== "" ? (
+                                  row[cellIndex]
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            ))}
                           </TableRow>
                         );
                       })}

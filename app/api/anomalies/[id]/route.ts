@@ -29,8 +29,12 @@ export async function GET(
     const anomalie = await prisma.anomalie.findUnique({
       where: { id },
       include: {
-        engin: { select: { id: true, name: true } },
-        site: { select: { id: true, name: true } },
+        engin: {
+          include: {
+            parc: true,
+          },
+        },
+        site: true,
         historiqueStatutAnomalies: {
           orderBy: { dateChangement: "desc" },
         },

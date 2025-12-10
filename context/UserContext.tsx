@@ -36,7 +36,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         // Convertir en UserDetail
         const typedUser: UserDetail = {
-          id: userData.id || "",
+          id: userData?.id || "",
           name: userData.name || "",
           email: userData.email || "",
           active: Boolean(userData.active),
