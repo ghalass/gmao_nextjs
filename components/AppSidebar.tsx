@@ -20,6 +20,9 @@ import {
   Puzzle,
   Form,
   FileUpIcon,
+  FolderCog2Icon,
+  CalendarCheck,
+  Ungroup,
 } from "lucide-react";
 
 import {
@@ -51,103 +54,155 @@ const mainItems = [
   },
 ];
 
-const configItems = [
-  {
-    title: "Engin",
-    url: "/engins",
-    icon: Truck,
-    description: "Gérer les engins",
-  },
-  {
-    title: "Parc",
-    url: "/parcs",
-    icon: Car,
-    description: "Gérer les parcs",
-  },
-  {
-    title: "Type de parc",
-    url: "/typeparcs",
-    icon: Tractor,
-    description: "Gérer les type des parcs",
-  },
-  {
-    title: "Sites",
-    url: "/sites",
-    icon: MapPin,
-    description: "Gérer les sites",
-  },
-  {
-    title: "Panne",
-    url: "/pannes",
-    icon: Wrench,
-    description: "Gérer les pannes",
-  },
-  {
-    title: "Type de panne",
-    url: "/typepannes",
-    icon: ListOrdered,
-    description: "Gérer les type des pannes",
-  },
-];
+const configItems = {
+  title: "Configurations",
+  icon: Settings,
 
-const saisieItems = [
-  {
-    title: "Journalier",
-    url: "/saisies",
-    icon: Truck,
-    description: "Gérer les saisies des engins",
-  },
-];
+  list: [
+    {
+      title: "Engin",
+      url: "/engins",
+      icon: Truck,
+      description: "Gérer les engins",
+    },
+    {
+      title: "Parc",
+      url: "/parcs",
+      icon: Car,
+      description: "Gérer les parcs",
+    },
+    {
+      title: "Type de parc",
+      url: "/typeparcs",
+      icon: Tractor,
+      description: "Gérer les type des parcs",
+    },
+    {
+      title: "Sites",
+      url: "/sites",
+      icon: MapPin,
+      description: "Gérer les sites",
+    },
+    {
+      title: "Panne",
+      url: "/pannes",
+      icon: Wrench,
+      description: "Gérer les pannes",
+    },
+    {
+      title: "Type de panne",
+      url: "/typepannes",
+      icon: ListOrdered,
+      description: "Gérer les type des pannes",
+    },
+  ],
+};
 
-const backlogItems = [
-  {
-    title: "Dashboard",
-    url: "/anomalies/stats",
-    icon: Gauge,
-    description: "Dashboard",
-  },
-  {
-    title: "Backlog",
-    url: "/anomalies",
-    icon: Wrench,
-    description: "Gestion des anomalies",
-  },
-];
+const saisieItems = {
+  title: "Gestion de saisie",
+  icon: Settings,
 
-const gestionOrganesItems = [
-  {
-    title: "Organes",
-    url: "/organes",
-    icon: FormInputIcon,
-    description: "Gestion des organes",
-  },
-];
+  list: [
+    {
+      title: "Journalier",
+      url: "/saisies",
+      icon: Truck,
+      description: "Gérer les saisies des engins",
+    },
+  ],
+};
 
-const adminItems = [
-  {
-    title: "Utilisateurs",
-    url: "/users",
-    icon: Users,
-    description: "Gérer les utilisateurs",
-  },
-  {
-    title: "Rôles",
-    url: "/roles",
-    icon: Shield,
-    description: "Gérer les rôles",
-  },
-  {
-    title: "Permissions",
-    url: "/permissions",
-    icon: ShieldUser,
-    description: "Gérer les permissions",
-  },
-  {
-    title: "Importations",
-    url: "/importations",
-    icon: FileUpIcon,
-    description: "Gérer les importations",
-  },
+const backlogItems = {
+  title: "Gestion des backlog",
+  icon: Wrench,
+  list: [
+    {
+      title: "Dashboard",
+      url: "/anomalies/stats",
+      icon: Gauge,
+      description: "Dashboard",
+    },
+    {
+      title: "Backlog",
+      url: "/anomalies",
+      icon: Wrench,
+      description: "Gestion des anomalies",
+    },
+  ],
+};
+
+const rapportsItems = {
+  title: "Rapports",
+  icon: FolderCog2Icon,
+
+  list: [
+    {
+      title: "RJE",
+      url: "/rapports/rje",
+      icon: CalendarCheck,
+      description: "RJE",
+    },
+    {
+      title: "Unité physique",
+      url: "/rapports/unite-physique",
+      icon: Ungroup,
+      description: "Unité physique",
+    },
+  ],
+};
+
+const gestionOrganesItems = {
+  title: "Gestion des organes",
+  icon: Puzzle,
+  list: [
+    {
+      title: "Organes",
+      url: "/organes",
+      icon: FormInputIcon,
+      description: "Gestion des organes",
+    },
+  ],
+};
+
+const adminItems = {
+  title: "Admin",
+  icon: LockKeyhole,
+
+  list: [
+    {
+      title: "Utilisateurs",
+      url: "/users",
+      icon: Users,
+      description: "Gérer les utilisateurs",
+    },
+    {
+      title: "Rôles",
+      url: "/roles",
+      icon: Shield,
+      description: "Gérer les rôles",
+    },
+    {
+      title: "Permissions",
+      url: "/permissions",
+      icon: ShieldUser,
+      description: "Gérer les permissions",
+    },
+    {
+      title: "Importations",
+      url: "/importations",
+      icon: FileUpIcon,
+      description: "Gérer les importations",
+    },
+  ],
+};
+
+const allItems = [
+  saisieItems,
+  rapportsItems,
+  backlogItems,
+  gestionOrganesItems,
+  configItems,
+  adminItems,
 ];
 
 // Hook personnalisé pour la navigation active
@@ -166,14 +221,12 @@ function useActivePath() {
 
 export function AppSidebar() {
   const isActivePath = useActivePath();
-
   return (
     <Sidebar variant="floating" collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/*  */}
               {/* Liens principaux */}
               {mainItems.map((item) => {
                 const isActive = isActivePath(item.url);
@@ -184,7 +237,7 @@ export function AppSidebar() {
                       tooltip={item.description}
                       isActive={isActive}
                       className={cn(
-                        "transition-all duration-200 hover:bg-accent",
+                        "transition-all duration-200 hover:bg-accent mb-1",
                         isActive &&
                           "bg-accent text-accent-foreground font-medium"
                       )}
@@ -201,251 +254,71 @@ export function AppSidebar() {
                 );
               })}
 
-              {/* Section Saisie */}
-              <Collapsible className="group/collapsible" defaultOpen={false}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Saisies"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FormInputIcon className="w-4 h-4" />
-                        <span>Saisies</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
+              <hr className="my-1" />
+              {/* ALL */}
+              {allItems.map((theItem, index) => (
+                <Collapsible
+                  key={index}
+                  className="group/collapsible"
+                  defaultOpen={false}
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        className="w-full justify-between hover:bg-accent transition-all duration-200"
+                        tooltip={theItem.title}
+                      >
+                        <div className="flex items-center gap-2">
+                          <theItem.icon className="w-4 h-4" />
+                          <span
+                            className={cn(
+                              "transition-all duration-200",
+                              "group-data-[collapsible=icon]:hidden"
+                            )}
+                          >
+                            {theItem.title}
+                          </span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
 
-                  <CollapsibleContent className="CollapsibleContent">
-                    <SidebarMenuSub className="mt-1">
-                      <SidebarMenuSubItem>
-                        {saisieItems.map((item) => {
-                          const isActive = isActivePath(item.url);
-                          return (
-                            <SidebarMenuButton
-                              key={item.title}
-                              asChild
-                              isActive={isActive}
-                              className={cn(
-                                "pl-4 transition-all duration-200 hover:bg-accent",
-                                isActive &&
-                                  "bg-accent text-accent-foreground font-medium"
-                              )}
-                              tooltip={item.description}
-                            >
-                              <Link href={item.url}>
-                                <item.icon className="w-4 h-4" />
-                                <span>{item.title}</span>
-                                {isActive && (
-                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
+                    <CollapsibleContent className="CollapsibleContent">
+                      <SidebarMenuSub className="mt-1">
+                        <SidebarMenuSubItem>
+                          {theItem.list.map((item) => {
+                            const isActive = isActivePath(item.url);
+                            return (
+                              <SidebarMenuButton
+                                key={item.title}
+                                asChild
+                                isActive={isActive}
+                                className={cn(
+                                  "pl-4 transition-all duration-200 hover:bg-accent mb-1",
+                                  isActive &&
+                                    "bg-accent text-accent-foreground font-medium"
                                 )}
-                              </Link>
-                            </SidebarMenuButton>
-                          );
-                        })}
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* backlogItems */}
-              <Collapsible className="group/collapsible" defaultOpen={false}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Backlogs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Wrench className="w-4 h-4" />
-                        <span>Backlogs</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent className="CollapsibleContent">
-                    <SidebarMenuSub className="mt-1">
-                      <SidebarMenuSubItem>
-                        {backlogItems.map((item) => {
-                          const isActive = isActivePath(item.url);
-                          return (
-                            <SidebarMenuButton
-                              key={item.title}
-                              asChild
-                              isActive={isActive}
-                              className={cn(
-                                "pl-4 transition-all duration-200 hover:bg-accent",
-                                isActive &&
-                                  "bg-accent text-accent-foreground font-medium"
-                              )}
-                              tooltip={item.description}
-                            >
-                              <Link href={item.url}>
-                                <item.icon className="w-4 h-4" />
-                                <span>{item.title}</span>
-                                {isActive && (
-                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          );
-                        })}
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* gestionOrganesItems */}
-              <Collapsible className="group/collapsible" defaultOpen={false}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Gestion des organes"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Puzzle className="w-4 h-4" />
-                        <span>Organes</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent className="CollapsibleContent">
-                    <SidebarMenuSub className="mt-1">
-                      <SidebarMenuSubItem>
-                        {gestionOrganesItems.map((item) => {
-                          const isActive = isActivePath(item.url);
-                          return (
-                            <SidebarMenuButton
-                              key={item.title}
-                              asChild
-                              isActive={isActive}
-                              className={cn(
-                                "pl-4 transition-all duration-200 hover:bg-accent",
-                                isActive &&
-                                  "bg-accent text-accent-foreground font-medium"
-                              )}
-                              tooltip={item.description}
-                            >
-                              <Link href={item.url}>
-                                <item.icon className="w-4 h-4" />
-                                <span>{item.title}</span>
-                                {isActive && (
-                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          );
-                        })}
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* Section Configurations */}
-              <Collapsible className="group/collapsible" defaultOpen={false}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Configurations"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Settings className="w-4 h-4" />
-                        <span>Configurations</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent>
-                    <SidebarMenuSub className="mt-1">
-                      <SidebarMenuSubItem>
-                        {configItems.map((item) => {
-                          const isActive = isActivePath(item.url);
-                          return (
-                            <SidebarMenuButton
-                              key={item.title}
-                              asChild
-                              isActive={isActive}
-                              className={cn(
-                                "pl-4 transition-all duration-200 hover:bg-accent",
-                                isActive &&
-                                  "bg-accent text-accent-foreground font-medium"
-                              )}
-                              tooltip={item.description}
-                            >
-                              <Link href={item.url}>
-                                <item.icon className="w-4 h-4" />
-                                <span>{item.title}</span>
-                                {isActive && (
-                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          );
-                        })}
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* Section Administration */}
-              <Collapsible className="group/collapsible" defaultOpen={false}>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className="w-full justify-between hover:bg-accent transition-all duration-200"
-                      tooltip="Administration du système"
-                    >
-                      <div className="flex items-center gap-2">
-                        <LockKeyhole className="w-4 h-4" />
-                        <span>Administration</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 text-muted-foreground" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent className="CollapsibleContent">
-                    <SidebarMenuSub className="mt-1">
-                      <SidebarMenuSubItem>
-                        {adminItems.map((item) => {
-                          const isActive = isActivePath(item.url);
-                          return (
-                            <SidebarMenuButton
-                              key={item.title}
-                              asChild
-                              isActive={isActive}
-                              className={cn(
-                                "pl-4 transition-all duration-200 hover:bg-accent",
-                                isActive &&
-                                  "bg-accent text-accent-foreground font-medium"
-                              )}
-                              tooltip={item.description}
-                            >
-                              <Link href={item.url}>
-                                <item.icon className="w-4 h-4" />
-                                <span>{item.title}</span>
-                                {isActive && (
-                                  <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
-                                )}
-                              </Link>
-                            </SidebarMenuButton>
-                          );
-                        })}
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+                                tooltip={item.description}
+                              >
+                                <Link href={item.url}>
+                                  <item.icon className="w-4 h-4" />
+                                  <span>{item.title}</span>
+                                  {isActive && (
+                                    <div className="ml-auto w-1 h-3 bg-primary rounded-full" />
+                                  )}
+                                </Link>
+                              </SidebarMenuButton>
+                            );
+                          })}
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              ))}
             </SidebarMenu>
+
+            {/*  */}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
