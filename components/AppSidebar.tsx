@@ -165,7 +165,7 @@ const gestionOrganesItems = {
 };
 
 const adminItems = {
-  title: "Admin",
+  title: "Administrateur",
   icon: LockKeyhole,
 
   list: [
