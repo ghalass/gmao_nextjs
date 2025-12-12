@@ -33,7 +33,15 @@ export interface RapportRjeItem {
   [key: string]: any;
 }
 
-export const useRapportRje = (date: string | null) => {
+// Définir le type pour les options
+interface RapportRjeOptions {
+  enabled?: boolean;
+}
+
+export const useRapportRje = (
+  date: string | null,
+  options: RapportRjeOptions = {}
+) => {
   return useQuery<RapportRjeItem[]>({
     queryKey: ["rapport-rje", date],
     queryFn: async () => {
@@ -49,7 +57,7 @@ export const useRapportRje = (date: string | null) => {
 
       return data;
     },
-    enabled: !!date,
+    enabled: options.enabled ?? !!date,
     staleTime: 1000 * 60 * 2,
   });
 };

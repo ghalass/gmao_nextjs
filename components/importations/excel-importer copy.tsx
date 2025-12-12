@@ -1347,20 +1347,14 @@ export function ExcelImporter({
                           height: `${virtualRow.size}px`,
                           transform: `translateY(${virtualRow.start}px)`,
                         }}
-                        className={`border-b ${
-                          isProcessing
-                            ? "bg-primary/10 dark:bg-primary/20"
-                            : isError
-                            ? "bg-red-50/50 dark:bg-red-950/20"
-                            : filteredIndex % 2 === 0
-                            ? "bg-background"
-                            : "bg-muted/30"
-                        }`}
+                        className={`border-b 
+                          
+                        `}
                       >
                         <div className="flex h-full">
                           {/* Cellule Statut */}
                           <div
-                            className="border-r flex items-center justify-center"
+                            className="border-r flex items-center "
                             style={{
                               width: columnWidths.status,
                               minWidth: columnWidths.status,
@@ -1376,14 +1370,14 @@ export function ExcelImporter({
 
                           {/* Cellule Résultat */}
                           <div
-                            className="border-r overflow-hidden"
+                            className="border-r overflow-hidden "
                             style={{
                               width: columnWidths.result,
                               minWidth: columnWidths.result,
                               height: "100%",
                             }}
                           >
-                            <div className="h-full ">
+                            <div className="h-full flex items-center">
                               <div className="p-2 space-y-1">
                                 {rowResult && (
                                   <>

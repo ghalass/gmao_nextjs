@@ -34,7 +34,7 @@ export function useAuth() {
       throw new Error(extractErrorMessage(data));
     } else {
       await refreshUser();
-      toast.success("Connexion réussie !");
+      // toast.success("Connexion réussie !");
       return true;
     }
   };
@@ -55,7 +55,7 @@ export function useAuth() {
       throw new Error(errorMessage);
     } else {
       // await refreshUser();
-      toast.success("Inscription réussie !");
+      // toast.success("Inscription réussie !");
       return true;
     }
   };
