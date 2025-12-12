@@ -23,12 +23,11 @@ import {
   BarChart,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-to-b from-background to-muted/20 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* En-tête */}
         <div className="text-center mb-8 md:mb-12">
