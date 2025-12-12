@@ -1,6 +1,7 @@
 // app/api/import/services/importService.ts
 import { convertField, isValidFormat } from "@/lib/convertField";
 import { prisma } from "@/lib/prisma";
+import { format } from "date-fns";
 
 enum SourceAnomalie {
   VS = "VS",
@@ -39,35 +40,270 @@ export class ImportService {
         case "engins":
           return await this.importEngins(data);
         case "typepannes":
-        // return await this.importTypePannes(data);
+          return await this.importTypePannes(data);
         case "pannes":
-        // return await this.importPannes(data);
-        case "typelubrifiants":
-        // return await this.importTypeLubrifiants(data);
-        case "lubrifiants":
-        // return await this.importLubrifiants(data);
-        case "typeconsommationlub":
-        // return await this.importTypeConsommationLub(data);
-        case "saisiehrm":
-        // return await this.importSaisieHRM(data);
-        case "saisiehim":
-        // return await this.importSaisieHIM(data);
-        case "saisielubrifiant":
-        // return await this.importSaisieLubrifiant(data);
-        case "objectifs":
-        // return await this.importObjectifs(data);
-        case "roles":
-        // return await this.importRoles(data);
+          return await this.importPannes(data);
         case "users":
           return await this.importUsers(data);
         case "anomalies":
           return await this.importAnomalies(data);
+        case "saisie_hrm":
+          return await this.importSaisieHrm(data);
+        case "saisie_hims":
+          return await this.importSaisieHims(data);
+
         default:
           throw new Error(`Onglet non supporté: ${sheetName}`);
       }
     } catch (error) {
       console.error(`Erreur lors de l'import ${sheetName}:`, error);
       throw error;
+    }
+  }
+
+  async importSaisieHims(data: any) {
+    try {
+      // console.log("##### ", data.enginName);
+
+      const du = convertField(data.du, "date");
+      const him = convertField(data.him, "number") ?? 0;
+      const ni = convertField(data.ni, "number") ?? 0;
+      const obs = convertField(data.obs, "string") ?? "";
+
+      const enginName = convertField(data.enginName, "string");
+      const panneName = convertField(data.panneName, "string");
+
+      const originData = {
+        du,
+        enginName,
+        panneName,
+        him,
+        ni,
+        obs,
+      };
+      // console.log("###################################################");
+      // console.log(originData);
+
+      // VALIDATIONS
+      if (!du)
+        return [{ success: false, data, message: `Le champ 'du' est requis` }];
+      if (!enginName?.trim())
+        return [
+          { success: false, data, message: `Le champ 'enginName' est requis` },
+        ];
+      if (!panneName?.trim())
+        return [
+          { success: false, data, message: `Le champ 'panneName' est requis` },
+        ];
+      if (him < 0 || him > 24)
+        return [
+          {
+            success: false,
+            data,
+            message: `Le champ 'him' doit être entre 0 et 24`,
+          },
+        ];
+      if (ni < 0)
+        return [
+          {
+            success: false,
+            data,
+            message: `Le champ 'ni' ne doit pas être négatif`,
+          },
+        ];
+
+      // FETCH ENGINS & PANNE
+      const engin = await prisma.engin.findUnique({
+        where: { name: enginName },
+      });
+      if (!engin)
+        return [
+          { success: false, data, message: `Engin "${enginName}" non trouvé` },
+        ];
+
+      let panne = await prisma.panne.findUnique({ where: { name: panneName } });
+      if (!panne) {
+        return [
+          {
+            success: false,
+            data,
+            message: `La panne 'panneName' non trouvé`,
+          },
+        ];
+      }
+      let saisiehrm = await prisma.saisiehrm.findFirst({
+        where: { du: du, enginId: engin.id },
+      });
+      if (!saisiehrm) {
+        return [
+          {
+            success: false,
+            data,
+            message: `La saisiehrm 'saisiehrm' non trouvé`,
+          },
+        ];
+      }
+
+      const upsertData = {
+        him,
+        ni,
+        obs,
+        panne: { connect: { id: panne.id } },
+        saisiehrm: { connect: { id: saisiehrm.id } },
+        engin: { connect: { id: engin.id } },
+      };
+
+      const saise = await prisma.saisiehim.upsert({
+        where: {
+          panneId_saisiehrmId: {
+            panneId: panne.id,
+            saisiehrmId: saisiehrm.id,
+          },
+        },
+        update: upsertData, // Même structure
+        create: upsertData, // Même structure
+      });
+      //
+      return [
+        {
+          success: true,
+          // data: saise,
+          message: `SaisieHim importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      console.error(error);
+      return [{ success: false, data, message: `Erreur: ${error.message}` }];
+    }
+  }
+
+  async importSaisieHrm(data: any) {
+    try {
+      const du = convertField(data.du, "date");
+      const hrm = convertField(data.hrm, "number") ?? 0;
+
+      // Relations
+      const enginName = convertField(data.enginName, "string");
+      const siteName = convertField(data.siteName, "string");
+
+      if (!du) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'du' est requis`,
+          },
+        ];
+      }
+      if (!enginName || enginName.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'enginName' est requis`,
+          },
+        ];
+      }
+      if (!siteName || siteName.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'siteName' est requis`,
+          },
+        ];
+      }
+      if (hrm === null) {
+        console.log(hrm);
+
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'hrm' est requis`,
+          },
+        ];
+      }
+      if (hrm > 24) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'hrm' ne doit pas dépasser 24`,
+          },
+        ];
+      }
+      if (hrm < 0) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'hrm' ne doit pas être positif`,
+          },
+        ];
+      }
+
+      const [engin, site] = await Promise.all([
+        prisma.engin.findUnique({ where: { name: enginName } }),
+        prisma.site.findUnique({ where: { name: siteName } }),
+      ]);
+
+      if (!engin) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Engin "${enginName}" non trouvé`,
+          },
+        ];
+      }
+      if (!site) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Site "${siteName}" non trouvé`,
+          },
+        ];
+      }
+
+      const saise = await prisma.saisiehrm.upsert({
+        where: {
+          du_enginId: {
+            // Utilisez le nom de la contrainte unique composée
+            du: du,
+            enginId: engin.id,
+          },
+        },
+        update: {
+          du: du,
+          enginId: engin.id,
+          siteId: site.id,
+          hrm,
+        },
+        create: {
+          du: du,
+          enginId: engin.id,
+          siteId: site.id,
+          hrm,
+        },
+      });
+
+      return [
+        {
+          success: true,
+          data: saise,
+          message: `Saisie importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          // data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
     }
   }
 
@@ -157,6 +393,50 @@ export class ImportService {
     }
   }
 
+  async importTypePannes(data: any) {
+    try {
+      const name = convertField(data.name, "string");
+      const description = convertField(data.description, "string") ?? "";
+
+      if (!name || name.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'name' est requis`,
+          },
+        ];
+      }
+
+      const newData = {
+        name,
+        description,
+      };
+
+      const typepanne = await prisma.typepanne.upsert({
+        where: { name: name },
+        update: newData,
+        create: newData,
+      });
+
+      return [
+        {
+          success: true,
+          data: typepanne,
+          message: `typepanne ${name} importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
   async importParcs(data: any) {
     try {
       const name = convertField(data.name, "string");
@@ -213,6 +493,128 @@ export class ImportService {
           success: true,
           data: parc,
           message: `Parc ${name} importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
+  async importPannes(data: any) {
+    try {
+      const name = convertField(data.name, "string");
+      const description = convertField(data.description, "string");
+      const typepanneName = convertField(data.typepanneName, "string");
+      const parcName = convertField(data.parcName, "string");
+
+      if (!name || name.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'name' est requis`,
+          },
+        ];
+      }
+      if (!description || description.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'description' est requis`,
+          },
+        ];
+      }
+      if (!typepanneName) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'typepanneName' est requis`,
+          },
+        ];
+      }
+      if (!parcName) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'parcName' est requis`,
+          },
+        ];
+      }
+
+      const [typepanne, parc] = await Promise.all([
+        prisma.typepanne.findUnique({ where: { name: typepanneName } }),
+        prisma.parc.findUnique({ where: { name: parcName } }),
+      ]);
+
+      if (!typepanne) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `typepanne "${typepanneName}" non trouvé`,
+          },
+        ];
+      }
+
+      if (!parc) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `parc "${parcName}" non trouvé`,
+          },
+        ];
+      }
+
+      const newData = {
+        name: name,
+        typepanneId: typepanne.id,
+        parcId: parc.id,
+        description: description,
+      };
+      // console.log(newData);
+
+      // Créer ou mettre à jour la panne avec relation implicite
+      const panne = await prisma.panne.upsert({
+        where: { name: name },
+        update: {
+          description: description,
+          typepanneId: typepanne.id,
+          // Mettre à jour la relation avec le parc
+          parcs: {
+            connect: { id: parc.id },
+          },
+        },
+        create: {
+          name: name,
+          description: description,
+          typepanneId: typepanne.id,
+          // Créer avec relation au parc
+          parcs: {
+            connect: { id: parc.id },
+          },
+        },
+        // Inclure les relations pour voir le résultat
+        include: {
+          typepanne: true,
+          parcs: true,
+        },
+      });
+
+      return [
+        {
+          success: true,
+          data: panne,
+          message: `panne ${name} importé avec succès`,
         },
       ];
     } catch (error: any) {
@@ -324,8 +726,6 @@ export class ImportService {
     }
   }
 
-  // ... Ajouter les autres méthodes similaires (typepannes, pannes, etc.)
-
   async importUsers(data: any) {
     try {
       const name = convertField(data.name, "string");
@@ -395,27 +795,22 @@ export class ImportService {
       const description = convertField(data.description, "string");
       const source: SourceAnomalie = convertField(data.source, "string");
       const priorite: Priorite = convertField(data.priorite, "string");
-      const besoinPDR = convertField(data.besoinPDR, "boolean") || false;
-      const quantite = convertField(data.quantite, "int") || 0; // optionnel
-      const reference = convertField(data.reference, "string") || ""; // optionnel
-      const code = convertField(data.code, "string") || ""; // optionnel
-      const stock = convertField(data.stock, "string") || ""; // optionnel
-      const numeroBS = convertField(data.numeroBS, "string") || ""; // optionnel
-      const programmation = convertField(data.programmation, "string") || ""; // optionnel
-      const sortiePDR = convertField(data.sortiePDR, "string") || ""; // optionnel
-      const equipe = convertField(data.equipe, "string") || ""; // optionnel
+      const besoinPDR = convertField(data.besoinPDR, "boolean") ?? false;
+      const quantite = convertField(data.quantite, "int") ?? 0; // optionnel
+      const reference = convertField(data.reference, "string") ?? ""; // optionnel
+      const code = convertField(data.code, "string") ?? ""; // optionnel
+      const stock = convertField(data.stock, "string") ?? ""; // optionnel
+      const numeroBS = convertField(data.numeroBS, "string") ?? ""; // optionnel
+      const programmation = convertField(data.programmation, "string") ?? ""; // optionnel
+      const sortiePDR = convertField(data.sortiePDR, "string") ?? ""; // optionnel
+      const equipe = convertField(data.equipe, "string") ?? ""; // optionnel
       const statut: StatutAnomalie = convertField(data.statut, "string");
       const dateExecution = convertField(data.dateExecution, "date"); // optionnel
-      const confirmation = convertField(data.confirmation, "string") || ""; // optionnel
-      const observations = convertField(data.observations, "string") || ""; // optionnel
+      const confirmation = convertField(data.confirmation, "string") ?? ""; // optionnel
+      const observations = convertField(data.observations, "string") ?? ""; // optionnel
       // Relations
       const enginName = convertField(data.enginName, "string");
       const siteName = convertField(data.siteName, "string");
-
-      // if (data.numeroBacklog === "TO14-25-374") {
-      //   console.log(`data.equipe:`, data.equipe);
-      //   console.log(`equipe:`, equipe);
-      // }
 
       if (!numeroBacklog || numeroBacklog.trim() === "") {
         return [
@@ -534,7 +929,7 @@ export class ImportService {
         ];
       }
 
-      await prisma.anomalie.upsert({
+      const backlog = await prisma.anomalie.upsert({
         where: { numeroBacklog: numeroBacklog },
         update: {
           numeroBacklog: numeroBacklog,
@@ -585,8 +980,8 @@ export class ImportService {
       return [
         {
           success: true,
-          data: engin,
-          message: `Engin ${numeroBacklog} importé avec succès`,
+          data: backlog,
+          message: `Backlog ${numeroBacklog} importé avec succès`,
         },
       ];
     } catch (error: any) {

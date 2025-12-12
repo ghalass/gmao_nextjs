@@ -11,6 +11,7 @@ npx prisma generate
 npx prisma migrate dev --name init
 
 pnpm add @tanstack/react-query
+pnpm add @tanstack/react-virtual
 
 pnpm add bcryptjs jsonwebtoken formik yup @hookform/resolvers yup-locales
 pnpm add -D @types/jsonwebtoken

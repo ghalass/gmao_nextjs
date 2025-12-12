@@ -1,5 +1,10 @@
+import UnderConstruction from "@/components/UnderConstruction";
 import React from "react";
 
 export default function UnitePhysiquePage() {
-  return <div>UnitePhysiquePage</div>;
+  return (
+    <div>
+      <UnderConstruction pageName="Rapport Unités Physique" />
+    </div>
+  );
 }

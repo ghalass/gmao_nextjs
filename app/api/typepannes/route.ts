@@ -7,7 +7,7 @@ const the_resource = "typepanne";
 
 export async function GET(request: NextRequest) {
   try {
-    // Vérifier la permission de lecture des sites (pas "users")
+    // Vérifier la permission de lecture des types de panne
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
@@ -16,7 +16,16 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             pannes: true,
-            typepanneParc: true,
+          },
+        },
+        // Inclure les pannes avec leurs parcs pour calculer le total
+        pannes: {
+          include: {
+            _count: {
+              select: {
+                panneParcs: true,
+              },
+            },
           },
         },
       },
@@ -25,7 +34,23 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(typepannes);
+    // Calculer le nombre de parcs pour chaque type de panne
+    const typepannesWithCounts = typepannes.map((typepanne) => {
+      const totalParcs = typepanne.pannes.reduce(
+        (sum, panne) => sum + panne._count.panneParcs,
+        0
+      );
+
+      return {
+        ...typepanne,
+        _count: {
+          ...typepanne._count,
+          panneParcs: totalParcs, // Ajouter le compte calculé
+        },
+      };
+    });
+
+    return NextResponse.json(typepannesWithCounts);
   } catch (error) {
     console.error("Erreur lors de la récupération des types de panne:", error);
     return NextResponse.json(
@@ -37,7 +62,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Vérifier la permission de lecture des sites (pas "users")
+    // Vérifier la permission de création des types de panne
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
@@ -72,13 +97,31 @@ export async function POST(request: NextRequest) {
         _count: {
           select: {
             pannes: true,
-            typepanneParc: true,
+          },
+        },
+        // Inclure la structure vide des pannes pour la cohérence
+        pannes: {
+          include: {
+            _count: {
+              select: {
+                panneParcs: true,
+              },
+            },
           },
         },
       },
     });
 
-    return NextResponse.json(typepanne, { status: 201 });
+    // Ajouter le count des parcs (toujours 0 pour un nouvel enregistrement)
+    const typepanneWithFullCount = {
+      ...typepanne,
+      _count: {
+        ...typepanne._count,
+        panneParcs: 0, // Pas de parcs pour un nouveau type de panne
+      },
+    };
+
+    return NextResponse.json(typepanneWithFullCount, { status: 201 });
   } catch (error) {
     console.error("Erreur lors de la création du type de panne:", error);
     return NextResponse.json(

@@ -90,13 +90,16 @@ model Parc {
   typeparcId           String
   engins               Engin[]
   typesConsommationLub TypeconsommationlubParc[]
-  typepanneParc        TypepanneParc[]
   lubrifiantParc       LubrifiantParc[]
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
 
-  typeparc Typeparc   @relation(fields: [typeparcId], references: [id], onDelete: Restrict)
-  objectif Objectif[]
+  // CORRECTION : objectifs au pluriel (relation one-to-many)
+  objectifs  Objectif[] // ← PLURIEL
+  // Relation many-to-many implicite avec Panne
+  pannes     Panne[] // ← Relation implicite
+  typeparc   Typeparc    @relation(fields: [typeparcId], references: [id])
+  panneParcs PanneParc[]
 
   @@map("parc")
 }
@@ -164,34 +167,39 @@ model Typepanne {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  pannes        Panne[]
-  typepanneParc TypepanneParc[]
+  pannes Panne[]
 
   @@map("typepanne")
 }
 
-model TypepanneParc {
-  parcId      String    @map("parc_id")
-  typepanneId String    @map("typepanne_id")
-  parc        Parc      @relation(fields: [parcId], references: [id], onDelete: Restrict)
-  typepanne   Typepanne @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model PanneParc {
+  parcId    String   @map("parc_id")
+  panneId   String   @map("panne_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@id([parcId, typepanneId])
-  @@map("typepanne_parc")
+  // Relations
+  parc  Parc  @relation(fields: [parcId], references: [id], onDelete: Restrict)
+  panne Panne @relation(fields: [panneId], references: [id], onDelete: Restrict)
+
+  @@id([parcId, panneId])
+  @@map("panne_parc")
 }
 
 model Panne {
   id          String   @id @default(cuid())
   name        String   @unique
+  description String?
   typepanneId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  typepanne Typepanne   @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
-  saisiehim Saisiehim[]
+  typepanne  Typepanne   @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
+  // Relation many-to-many implicite avec Parc
+  parcs      Parc[] // ← Relation implicite
+  saisiehim  Saisiehim[]
+  panneParcs PanneParc[]
 
   @@map("panne")
 }
@@ -229,8 +237,8 @@ model Saisiehim {
   panne            Panne              @relation(fields: [panneId], references: [id], onDelete: Restrict)
   saisiehrm        Saisiehrm          @relation(fields: [saisiehrmId], references: [id], onDelete: Restrict)
   saisielubrifiant Saisielubrifiant[]
-  engin            Engin?             @relation(fields: [enginId], references: [id])
-  enginId          String?
+  engin            Engin              @relation(fields: [enginId], references: [id])
+  enginId          String
 
   @@unique([panneId, saisiehrmId])
   @@map("saisie_him")

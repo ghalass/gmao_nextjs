@@ -1,15 +1,28 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import QueryProvider from "@/components/QueryProviser";
 import { APP_NAME } from "@/lib/constantes";
 
-const cairo = Cairo({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  preload: true,
+import localFont from "next/font/local";
+
+const cairo = localFont({
+  src: [
+    {
+      path: "../public/fonts/Cairo/static/Cairo-Regular.ttf",
+      weight: "400",
+    },
+    {
+      path: "../public/fonts/Cairo/static/Cairo-Medium.ttf",
+      weight: "500",
+    },
+    {
+      path: "../public/fonts/Cairo/static/Cairo-Bold.ttf",
+      weight: "700",
+    },
+  ],
+  variable: "--font-cairo",
 });
 
 export const metadata: Metadata = {
@@ -18,19 +31,18 @@ export const metadata: Metadata = {
     "GMAO-PRO est une application web pour gestion de la maintenance assisté par ordinateur",
   authors: { name: "GHALASS", url: "ghalass.com" },
   icons: {
-    icon: "/images/wrench.png", // This sets the favicon
-    // icon: "/favicon.ico", // This sets the favicon
+    icon: "/images/wrench.png",
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <body className={`${cairo.className}`}>
+    <html lang="fr" suppressHydrationWarning className={cairo.variable}>
+      <body>
         <QueryProvider>
           <ThemeProvider
             attribute="class"

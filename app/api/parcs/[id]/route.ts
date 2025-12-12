@@ -56,8 +56,9 @@ export async function GET(request: NextRequest, context: Context) {
             name: "asc",
           },
         },
-        objectif: {
-          // ← SINGULIER
+        // CORRECTION : objectifs au pluriel
+        objectifs: {
+          // ← PLURIEL
           orderBy: {
             annee: "desc",
           },
@@ -65,9 +66,10 @@ export async function GET(request: NextRequest, context: Context) {
         _count: {
           select: {
             engins: true,
-            objectif: true, // ← SINGULIER
+            // CORRECTION : objectifs au pluriel
+            objectifs: true, // ← PLURIEL
             typesConsommationLub: true,
-            typepanneParc: true,
+            panneParcs: true, // ← CORRECTION : panneParcs au lieu de typepanneParc
             lubrifiantParc: true,
           },
         },
@@ -317,9 +319,10 @@ export async function DELETE(request: NextRequest, context: Context) {
         _count: {
           select: {
             engins: true,
-            objectif: true, // ← SINGULIER
+            // CORRECTION : objectifs au pluriel
+            objectifs: true, // ← PLURIEL
             typesConsommationLub: true,
-            typepanneParc: true,
+            panneParcs: true, // ← CORRECTION : panneParcs au lieu de typepanneParc
             lubrifiantParc: true,
           },
         },
@@ -333,9 +336,9 @@ export async function DELETE(request: NextRequest, context: Context) {
     // Vérifier s'il y a des relations qui empêchent la suppression
     const relationsCount =
       (existingParc._count.engins || 0) +
-      (existingParc._count.objectif || 0) + // ← SINGULIER
+      (existingParc._count.objectifs || 0) + // ← PLURIEL
       (existingParc._count.typesConsommationLub || 0) +
-      (existingParc._count.typepanneParc || 0) +
+      (existingParc._count.panneParcs || 0) + // ← CORRECTION : panneParcs au lieu de typepanneParc
       (existingParc._count.lubrifiantParc || 0);
 
     if (relationsCount > 0) {
@@ -344,9 +347,10 @@ export async function DELETE(request: NextRequest, context: Context) {
           error: `Impossible de supprimer ce parc car il est lié à ${relationsCount} élément(s) (engins, objectifs, etc.)`,
           details: {
             engins: existingParc._count.engins,
-            objectif: existingParc._count.objectif, // ← SINGULIER
+            // CORRECTION : objectifs au pluriel
+            objectifs: existingParc._count.objectifs, // ← PLURIEL
             typesConsommationLub: existingParc._count.typesConsommationLub,
-            typepanneParc: existingParc._count.typepanneParc,
+            panneParcs: existingParc._count.panneParcs, // ← CORRECTION : panneParcs au lieu de typepanneParc
             lubrifiantParc: existingParc._count.lubrifiantParc,
           },
         },

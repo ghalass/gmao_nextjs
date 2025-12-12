@@ -1,4 +1,4 @@
-// app/api/typepannes/[id]/route.ts
+// app/api/typepannes/[id]/route.ts - Version corrigée
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -14,9 +14,10 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Vérifier la permission de lecture des sites (pas "users")
+    // Vérifier la permission de lecture des types de panne
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
+
     // Attendre les params
     const { id } = await context.params;
 
@@ -26,7 +27,16 @@ export async function GET(
         _count: {
           select: {
             pannes: true,
-            typepanneParc: true,
+          },
+        },
+        // Inclure les pannes avec leurs parcs pour compter
+        pannes: {
+          include: {
+            _count: {
+              select: {
+                panneParcs: true,
+              },
+            },
           },
         },
       },
@@ -39,7 +49,22 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(typepanne);
+    // Calculer le nombre total de parcs
+    const totalParcs = typepanne.pannes.reduce(
+      (sum, panne) => sum + panne._count.panneParcs,
+      0
+    );
+
+    // Retourner les données avec le compte calculé
+    const responseData = {
+      ...typepanne,
+      _count: {
+        ...typepanne._count,
+        panneParcs: totalParcs, // Ajouter le compte calculé
+      },
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Erreur lors de la récupération du type de panne:", error);
     return NextResponse.json(
@@ -54,7 +79,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Vérifier la permission de lecture des sites (pas "users")
+    // Vérifier la permission de modification
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
@@ -107,13 +132,35 @@ export async function PUT(
         _count: {
           select: {
             pannes: true,
-            typepanneParc: true,
+          },
+        },
+        pannes: {
+          include: {
+            _count: {
+              select: {
+                panneParcs: true,
+              },
+            },
           },
         },
       },
     });
 
-    return NextResponse.json(typepanne);
+    // Calculer le nombre total de parcs
+    const totalParcs = typepanne.pannes.reduce(
+      (sum, panne) => sum + panne._count.panneParcs,
+      0
+    );
+
+    const responseData = {
+      ...typepanne,
+      _count: {
+        ...typepanne._count,
+        panneParcs: totalParcs,
+      },
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Erreur lors de la modification du type de panne:", error);
     return NextResponse.json(
@@ -128,21 +175,30 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Vérifier la permission de lecture des sites (pas "users")
+    // Vérifier la permission de suppression
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
 
     // Attendre les params
     const { id } = await context.params;
 
-    // Vérifier si le type de panne existe
+    // Vérifier si le type de panne existe avec toutes les dépendances
     const existingTypepanne = await prisma.typepanne.findUnique({
       where: { id },
       include: {
         _count: {
           select: {
             pannes: true,
-            typepanneParc: true,
+          },
+        },
+        pannes: {
+          include: {
+            _count: {
+              select: {
+                panneParcs: true,
+                saisiehim: true, // Vérifier aussi les saisies HIM
+              },
+            },
           },
         },
       },
@@ -155,18 +211,30 @@ export async function DELETE(
       );
     }
 
+    // Calculer le nombre total de parcs et saisies HIM
+    const totalParcs = existingTypepanne.pannes.reduce(
+      (sum, panne) => sum + panne._count.panneParcs,
+      0
+    );
+
+    const totalSaisiehim = existingTypepanne.pannes.reduce(
+      (sum, panne) => sum + panne._count.saisiehim,
+      0
+    );
+
     // Vérifier s'il y a des dépendances
     if (
       existingTypepanne._count.pannes > 0 ||
-      existingTypepanne._count.typepanneParc > 0
+      totalParcs > 0 ||
+      totalSaisiehim > 0
     ) {
       return NextResponse.json(
         {
-          error:
-            "Impossible de supprimer ce type de panne car il est utilisé par des pannes ou des parcs",
+          error: "Impossible de supprimer ce type de panne car il est utilisé",
           details: {
             pannes: existingTypepanne._count.pannes,
-            parcs: existingTypepanne._count.typepanneParc,
+            parcs: totalParcs,
+            saisiesHIM: totalSaisiehim,
           },
         },
         { status: 409 }
