@@ -1,29 +1,62 @@
-// app/api/rapports/unite-physique/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { HttpStatusCode } from "axios";
+import { log } from "console";
 
-const prisma = new PrismaClient();
+const ONE_DAY = 24 * 60 * 60 * 1000;
 
-export async function POST(request: NextRequest) {
+function daysInMonth(year: number, monthIndex: number) {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function safeNumber(v: any) {
+  if (v == null) return 0;
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+}
+
+export async function POST(req: Request) {
   try {
-    const { date } = await request.json();
+    const body = await req.json();
+    const { mois, annee } = body;
+    log("API unité-physique - mois:", mois, "année:", annee);
 
-    if (!date) {
-      return NextResponse.json({ message: "Date requise" }, { status: 400 });
+    if (!mois || !annee) {
+      return NextResponse.json(
+        { message: "Paramètres 'mois' et 'année' obligatoires" },
+        { status: 400 }
+      );
     }
 
-    const selectedDate = new Date(date);
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    const firstDayOfMonth = new Date(year, month - 1, 1);
-    const firstDayOfNextMonth = new Date(year, month, 1);
-    const firstDayOfYear = new Date(year, 0, 1);
-    const firstDayOfNextYear = new Date(year + 1, 0, 1);
+    const year = parseInt(annee);
+    const monthIndex = parseInt(mois) - 1;
+
+    if (isNaN(year) || isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+      return NextResponse.json(
+        { message: "Mois ou année invalide" },
+        { status: 400 }
+      );
+    }
+
+    // Périodes
+    const debutMois = new Date(year, monthIndex, 1);
+    const finMois = new Date(
+      year,
+      monthIndex,
+      daysInMonth(year, monthIndex),
+      23,
+      59,
+      59,
+      999
+    );
+    const debutAnnee = new Date(year, 0, 1);
+    const finAnnee = finMois; // Du 1er janvier au dernier jour du mois
 
     // Récupérer tous les sites actifs
     const sites = await prisma.site.findMany({
       where: { active: true },
       select: { id: true, name: true },
+      orderBy: { name: "asc" },
     });
 
     // Récupérer tous les types de parcs avec leurs parcs
@@ -33,28 +66,11 @@ export async function POST(request: NextRequest) {
           include: {
             engins: {
               where: { active: true },
-              include: {
-                site: true,
-                // HRM pour le mois sélectionné
-                saisiehrm: {
-                  where: {
-                    du: {
-                      gte: firstDayOfMonth,
-                      lt: firstDayOfNextMonth,
-                    },
-                  },
-                  include: {
-                    saisiehim: true,
-                  },
-                },
-                // HIM pour l'année sélectionnée
-                saisiehim: {
-                  where: {
-                    createdAt: {
-                      gte: firstDayOfYear,
-                      lt: firstDayOfNextYear,
-                    },
-                  },
+              select: {
+                id: true,
+                name: true,
+                site: {
+                  select: { name: true },
                 },
               },
             },
@@ -63,124 +79,161 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const result = typeParcs.map((typeParc) => {
-      const parcsData = typeParc.parcs.map((parc) => {
-        // Initialiser les statistiques par site
-        const siteStats: Record<
+    // Fonction pour agréger HRM/HIM pour un ensemble d'engins
+    async function aggregateForEngins(
+      enginIds: string[],
+      start: Date,
+      end: Date,
+      isMensuel: boolean
+    ) {
+      if (!enginIds.length) return { totalHRM: 0, totalHIM: 0 };
+
+      // Pour HRM (toujours le même calcul)
+      const hrmAgg = await prisma.saisiehrm.aggregate({
+        _sum: { hrm: true },
+        where: {
+          du: { gte: start, lte: end },
+          enginId: { in: enginIds },
+        },
+      });
+
+      // CORRECTION : Pour HIM, utiliser la même logique pour mensuel et annuel
+      // HIM est lié à saisiehrm via la relation
+      const himAgg = await prisma.saisiehim.aggregate({
+        _sum: { him: true },
+        where: {
+          // Utiliser le du (date) de saisiehrm pour le filtrage temporel
+          saisiehrm: {
+            du: { gte: start, lte: end },
+            enginId: { in: enginIds },
+          },
+        },
+      });
+
+      return {
+        totalHRM: safeNumber(hrmAgg._sum.hrm),
+        totalHIM: safeNumber(himAgg._sum.him),
+      };
+    }
+    const result = [];
+
+    for (const tp of typeParcs) {
+      const typeparcObj: any = {
+        typeParcId: tp.id,
+        typeParcName: tp.name,
+        parcs: [],
+        totalTypeParc: {
+          nbreEngins: 0,
+          aggregatesMois: {
+            totalHRM: 0,
+            totalHIM: 0,
+          },
+          aggregatesAnnee: {
+            totalHRM: 0,
+            totalHIM: 0,
+          },
+        },
+      };
+
+      // Pour chaque parc
+      for (const parc of tp.parcs) {
+        const enginIds = parc.engins.map((e: any) => e.id);
+        if (!enginIds.length) continue;
+
+        // Calcul par site pour ce parc
+        const siteStatsMois: Record<
+          string,
+          { hrm: number; him: number; nbre: number }
+        > = {};
+        const siteStatsAnnee: Record<
           string,
           { hrm: number; him: number; nbre: number }
         > = {};
 
+        // Initialiser tous les sites
         sites.forEach((site) => {
-          siteStats[site.name] = { hrm: 0, him: 0, nbre: 0 };
+          siteStatsMois[site.name] = { hrm: 0, him: 0, nbre: 0 };
+          siteStatsAnnee[site.name] = { hrm: 0, him: 0, nbre: 0 };
         });
 
-        // Pour chaque engin du parc
-        parc.engins.forEach((engin) => {
+        // Compter les engins par site
+        parc.engins.forEach((engin: any) => {
           const siteName = engin.site.name;
-
-          // Calculer HRM mensuel
-          const hrmMensuel = engin.saisiehrm.reduce((sum, saisie) => {
-            return sum + (saisie?.hrm || 0);
-          }, 0);
-
-          // Calculer HIM mensuel (depuis saisiehim liée à saisiehrm)
-          let himMensuel = 0;
-          engin.saisiehrm.forEach((saisie) => {
-            if (saisie?.saisiehim && saisie.saisiehim.length > 0) {
-              himMensuel += saisie.saisiehim.reduce((sum, himItem) => {
-                return sum + (himItem?.him || 0);
-              }, 0);
-            }
-          });
-
-          // Calculer HIM annuel
-          const himAnnuel = engin.saisiehim.reduce((sum, saisie) => {
-            return sum + (saisie?.him || 0);
-          }, 0);
-
-          // Mettre à jour les stats du site
-          const currentStats = siteStats[siteName] || {
-            hrm: 0,
-            him: 0,
-            nbre: 0,
-          };
-          siteStats[siteName] = {
-            hrm: currentStats.hrm + hrmMensuel,
-            him: currentStats.him + himMensuel,
-            nbre: currentStats.nbre + 1,
-          };
+          if (siteStatsMois[siteName]) {
+            siteStatsMois[siteName].nbre++;
+            siteStatsAnnee[siteName].nbre++;
+          }
         });
 
-        return {
+        // Récupérer les agrégats globaux pour ce parc
+        const [aggM, aggA] = await Promise.all([
+          aggregateForEngins(enginIds, debutMois, finMois, true),
+          aggregateForEngins(enginIds, debutAnnee, finAnnee, false),
+        ]);
+
+        // Pour obtenir les statistiques par site
+        for (const site of sites) {
+          const enginsDuSite = parc.engins.filter(
+            (e: any) => e.site.name === site.name
+          );
+          const siteEnginIds = enginsDuSite.map((e: any) => e.id);
+
+          if (siteEnginIds.length > 0) {
+            // Utiliser la même logique pour mensuel et annuel
+            const [siteAggM, siteAggA] = await Promise.all([
+              aggregateForEngins(siteEnginIds, debutMois, finMois, true),
+              aggregateForEngins(siteEnginIds, debutAnnee, finAnnee, false),
+            ]);
+
+            siteStatsMois[site.name].hrm = siteAggM.totalHRM;
+            siteStatsMois[site.name].him = siteAggM.totalHIM;
+
+            siteStatsAnnee[site.name].hrm = siteAggA.totalHRM;
+            siteStatsAnnee[site.name].him = siteAggA.totalHIM;
+          }
+        }
+
+        const parcData = {
+          parcId: parc.id,
           parcName: parc.name,
-          siteStats,
+          nbreEngins: enginIds.length,
+          siteStatsMois,
+          siteStatsAnnee,
+          aggregatesMois: {
+            totalHRM: aggM.totalHRM,
+            totalHIM: aggM.totalHIM,
+          },
+          aggregatesAnnee: {
+            totalHRM: aggA.totalHRM,
+            totalHIM: aggA.totalHIM,
+          },
         };
-      });
 
-      // Calculer les totaux pour le type de parc
-      let totalHRMMensuel = 0;
-      let totalHIMMensuel = 0;
-      let totalHIMAnnuel = 0;
+        typeparcObj.parcs.push(parcData);
 
-      typeParc.parcs.forEach((parc) => {
-        parc.engins.forEach((engin) => {
-          // HRM mensuel
-          engin.saisiehrm.forEach((saisie) => {
-            totalHRMMensuel += saisie?.hrm || 0;
+        // Mettre à jour les totaux du type de parc
+        typeparcObj.totalTypeParc.nbreEngins += enginIds.length;
+        typeparcObj.totalTypeParc.aggregatesMois.totalHRM += aggM.totalHRM;
+        typeparcObj.totalTypeParc.aggregatesMois.totalHIM += aggM.totalHIM;
+        typeparcObj.totalTypeParc.aggregatesAnnee.totalHRM += aggA.totalHRM;
+        typeparcObj.totalTypeParc.aggregatesAnnee.totalHIM += aggA.totalHIM;
+      }
 
-            // HIM mensuel (depuis saisiehim liée)
-            if (saisie?.saisiehim) {
-              saisie.saisiehim.forEach((himItem) => {
-                totalHIMMensuel += himItem?.him || 0;
-              });
-            }
-          });
+      result.push(typeparcObj);
+    }
 
-          // HIM annuel
-          engin.saisiehim.forEach((saisie) => {
-            totalHIMAnnuel += saisie?.him || 0;
-          });
-        });
-      });
-
-      return {
-        typeParcName: typeParc.name,
-        parcs: parcsData,
-        totalTypeParc: {
-          mensuel: {
-            totalHRM: totalHRMMensuel,
-            totalHIM: totalHIMMensuel,
-          },
-          annuel: {
-            // Pour HRM annuel, on multiplie le mensuel par 12 (estimation)
-            totalHRM: totalHRMMensuel * 12,
-            totalHIM: totalHIMAnnuel,
-          },
-        },
-      };
-    });
-
-    // Filtrer les types de parcs qui ont des données
-    const filteredResult = result.filter(
-      (item) =>
-        item.parcs.some((parc) =>
-          Object.values(parc.siteStats).some(
-            (stat) => stat.hrm > 0 || stat.him > 0 || stat.nbre > 0
-          )
-        ) ||
-        item.totalTypeParc.mensuel.totalHRM > 0 ||
-        item.totalTypeParc.mensuel.totalHIM > 0
-    );
-
-    return NextResponse.json(filteredResult);
-  } catch (error) {
-    console.error("Erreur génération rapport Unité Physique:", error);
+    // Retourner avec les sites pour le frontend
     return NextResponse.json(
       {
-        message: "Erreur serveur",
-        error: error instanceof Error ? error.message : "Erreur inconnue",
+        data: result,
+        sites: sites.map((s) => s.name),
       },
+      { status: HttpStatusCode.Ok }
+    );
+  } catch (error: any) {
+    console.error("Erreur API unité-physique :", error);
+    return NextResponse.json(
+      { message: "Erreur serveur", details: error.message },
       { status: 500 }
     );
   }

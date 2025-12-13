@@ -93,6 +93,7 @@ export async function POST(req: Request) {
     const engins = await prisma.engin.findMany({
       where: {
         saisiehrm: { some: {} },
+        active: true,
       },
       select: {
         id: true,
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
     const finalData = await Promise.all(
       engins.map(async (engin) => {
         const enginDetails = await prisma.engin.findUnique({
-          where: { id: engin.id },
+          where: { id: engin.id, active: true },
           select: {
             parcId: true,
             parc: { select: { name: true } },

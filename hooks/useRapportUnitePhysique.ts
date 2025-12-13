@@ -2,29 +2,48 @@
 import { useQuery } from "@tanstack/react-query";
 import { API } from "@/lib/constantes";
 
+export interface SiteStats {
+  hrm: number;
+  him: number;
+  nbre?: number; // Nombre d'engins
+}
+
+export interface ParcData {
+  parcId: string;
+  parcName: string;
+  nbreEngins: number;
+  siteStatsMois: Record<string, SiteStats>;
+  siteStatsAnnee: Record<string, SiteStats>;
+  aggregatesMois: {
+    totalHRM: number;
+    totalHIM: number;
+  };
+  aggregatesAnnee: {
+    totalHRM: number;
+    totalHIM: number;
+  };
+}
+
 export interface UnitePhysiqueItem {
+  typeParcId: string;
   typeParcName: string;
-  parcs: {
-    parcName: string;
-    siteStats: Record<
-      string,
-      {
-        hrm: number;
-        him: number;
-        nbre?: number; // Nombre d'engins
-      }
-    >;
-  }[];
+  parcs: ParcData[];
   totalTypeParc: {
-    mensuel: {
+    nbreEngins: number;
+    aggregatesMois: {
       totalHRM: number;
       totalHIM: number;
     };
-    annuel: {
+    aggregatesAnnee: {
       totalHRM: number;
       totalHIM: number;
     };
   };
+}
+
+export interface RapportUnitePhysiqueResponse {
+  data: UnitePhysiqueItem[];
+  sites: string[];
 }
 
 interface RapportUnitePhysiqueOptions {
@@ -32,27 +51,33 @@ interface RapportUnitePhysiqueOptions {
 }
 
 export const useRapportUnitePhysique = (
-  date: string | null,
+  mois: string | null,
+  annee: string | null,
   options: RapportUnitePhysiqueOptions = {}
 ) => {
-  return useQuery<UnitePhysiqueItem[]>({
-    queryKey: ["rapport-unite-physique", date],
+  console.log("Hook useRapportUnitePhysique - mois:", mois, "annee:", annee);
+  return useQuery<RapportUnitePhysiqueResponse>({
+    queryKey: ["rapport-unite-physique", mois, annee],
     queryFn: async () => {
+      if (!mois || !annee) {
+        throw new Error("Le mois et l'année sont requis");
+      }
+
       const res = await fetch(`${API}/rapports/unite-physique`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date }),
+        body: JSON.stringify({ mois: mois, annee: annee }),
       });
 
-      const data = await res.json();
-      if (!res.ok)
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
         throw new Error(
-          data?.message || "Erreur chargement rapport Unité Physique"
+          errorData?.message || "Erreur chargement rapport Unité Physique"
         );
+      }
 
-      return data;
+      return res.json();
     },
-    enabled: options.enabled ?? !!date,
-    staleTime: 1000 * 60 * 2,
+    enabled: options.enabled ?? !!(mois && annee), // Activer seulement si mois ET année
   });
 };

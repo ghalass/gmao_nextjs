@@ -23,6 +23,7 @@ import {
   FolderCog2Icon,
   CalendarCheck,
   Ungroup,
+  NotepadText,
 } from "lucide-react";
 
 import {
@@ -147,6 +148,12 @@ const rapportsItems = {
       url: "/rapports/unite-physique",
       icon: Ungroup,
       description: "Unité physique",
+    },
+    {
+      title: "Etat Mensuel",
+      url: "/rapports/etat-mensuel",
+      icon: NotepadText,
+      description: "Etat Mensuel",
     },
   ],
 };

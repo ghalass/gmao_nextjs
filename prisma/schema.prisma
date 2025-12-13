@@ -95,11 +95,10 @@ model Parc {
   updatedAt            DateTime                  @updatedAt
 
   // CORRECTION : objectifs au pluriel (relation one-to-many)
-  objectifs  Objectif[] // ← PLURIEL
+  objectifs Objectif[] // ← PLURIEL
   // Relation many-to-many implicite avec Panne
-  pannes     Panne[] // ← Relation implicite
-  typeparc   Typeparc    @relation(fields: [typeparcId], references: [id])
-  panneParcs PanneParc[]
+  pannes    Panne[] // ← Relation implicite
+  typeparc  Typeparc   @relation(fields: [typeparcId], references: [id])
 
   @@map("parc")
 }
@@ -172,20 +171,6 @@ model Typepanne {
   @@map("typepanne")
 }
 
-model PanneParc {
-  parcId    String   @map("parc_id")
-  panneId   String   @map("panne_id")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  parc  Parc  @relation(fields: [parcId], references: [id], onDelete: Restrict)
-  panne Panne @relation(fields: [panneId], references: [id], onDelete: Restrict)
-
-  @@id([parcId, panneId])
-  @@map("panne_parc")
-}
-
 model Panne {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -195,11 +180,10 @@ model Panne {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  typepanne  Typepanne   @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
+  typepanne Typepanne   @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
   // Relation many-to-many implicite avec Parc
-  parcs      Parc[] // ← Relation implicite
-  saisiehim  Saisiehim[]
-  panneParcs PanneParc[]
+  parcs     Parc[] // ← Relation implicite
+  saisiehim Saisiehim[]
 
   @@map("panne")
 }

@@ -12,7 +12,7 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             retry: 0, // 3 tentatives maximum par défaut (0 pour désactiver)
-            // refetchOnWindowFocus: false, // désactiver le refetch au focus, valeur par défaut true
+            refetchOnWindowFocus: false, // désactiver le refetch au focus, valeur par défaut true
             // refetchOnMount: false, // désactiver le refetch au montage, valeur par défaut true
             // staleTime: 5 * 60 * 1000, // 5 minutes // durée avant de considérer les données comme "stale", valeur par défaut 0
           },

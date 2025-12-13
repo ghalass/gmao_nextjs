@@ -34,7 +34,7 @@ export async function GET(
           include: {
             _count: {
               select: {
-                panneParcs: true,
+                parcs: true,
               },
             },
           },
@@ -51,7 +51,7 @@ export async function GET(
 
     // Calculer le nombre total de parcs
     const totalParcs = typepanne.pannes.reduce(
-      (sum, panne) => sum + panne._count.panneParcs,
+      (sum, panne) => sum + panne._count.parcs,
       0
     );
 
@@ -60,7 +60,7 @@ export async function GET(
       ...typepanne,
       _count: {
         ...typepanne._count,
-        panneParcs: totalParcs, // Ajouter le compte calculé
+        parcs: totalParcs, // Ajouter le compte calculé
       },
     };
 
@@ -138,7 +138,7 @@ export async function PUT(
           include: {
             _count: {
               select: {
-                panneParcs: true,
+                parcs: true,
               },
             },
           },
@@ -148,7 +148,7 @@ export async function PUT(
 
     // Calculer le nombre total de parcs
     const totalParcs = typepanne.pannes.reduce(
-      (sum, panne) => sum + panne._count.panneParcs,
+      (sum, panne) => sum + panne._count.parcs,
       0
     );
 
@@ -156,7 +156,7 @@ export async function PUT(
       ...typepanne,
       _count: {
         ...typepanne._count,
-        panneParcs: totalParcs,
+        parcs: totalParcs,
       },
     };
 
@@ -195,7 +195,7 @@ export async function DELETE(
           include: {
             _count: {
               select: {
-                panneParcs: true,
+                parcs: true,
                 saisiehim: true, // Vérifier aussi les saisies HIM
               },
             },
@@ -213,7 +213,7 @@ export async function DELETE(
 
     // Calculer le nombre total de parcs et saisies HIM
     const totalParcs = existingTypepanne.pannes.reduce(
-      (sum, panne) => sum + panne._count.panneParcs,
+      (sum, panne) => sum + panne._count.parcs,
       0
     );
 

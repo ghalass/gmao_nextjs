@@ -1,0 +1,9 @@
+
+### CREATE SITE
+# POST {{baseUrl}}/sites
+POST gmao.ghalass.com/api/rapports/etat-mensuel
+Content-Type: application/json
+
+{
+    "du":"2025-09-30"
+}

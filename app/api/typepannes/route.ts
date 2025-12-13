@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
           include: {
             _count: {
               select: {
-                panneParcs: true,
+                parcs: true,
               },
             },
           },
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Calculer le nombre de parcs pour chaque type de panne
     const typepannesWithCounts = typepannes.map((typepanne) => {
       const totalParcs = typepanne.pannes.reduce(
-        (sum, panne) => sum + panne._count.panneParcs,
+        (sum, panne) => sum + panne._count.parcs,
         0
       );
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         ...typepanne,
         _count: {
           ...typepanne._count,
-          panneParcs: totalParcs, // Ajouter le compte calculé
+          parcs: totalParcs, // Ajouter le compte calculé
         },
       };
     });
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
           include: {
             _count: {
               select: {
-                panneParcs: true,
+                parcs: true,
               },
             },
           },
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       ...typepanne,
       _count: {
         ...typepanne._count,
-        panneParcs: 0, // Pas de parcs pour un nouveau type de panne
+        parcs: 0, // Pas de parcs pour un nouveau type de panne
       },
     };
 

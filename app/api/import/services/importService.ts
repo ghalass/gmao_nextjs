@@ -1,6 +1,7 @@
 // app/api/import/services/importService.ts
 import { convertField, isValidFormat } from "@/lib/convertField";
 import { prisma } from "@/lib/prisma";
+import { log } from "console";
 import { format } from "date-fns";
 
 enum SourceAnomalie {
@@ -115,19 +116,27 @@ export class ImportService {
       // FETCH ENGINS & PANNE
       const engin = await prisma.engin.findUnique({
         where: { name: enginName },
+        include: { parc: true },
       });
-      if (!engin)
+      if (!engin) {
         return [
           { success: false, data, message: `Engin "${enginName}" non trouvé` },
         ];
-
-      let panne = await prisma.panne.findUnique({ where: { name: panneName } });
+      }
+      const panne = await prisma.panne.findFirst({
+        where: {
+          name: panneName,
+          parcs: {
+            some: { name: engin.parc.name },
+          },
+        },
+      });
       if (!panne) {
         return [
           {
             success: false,
             data,
-            message: `La panne 'panneName' non trouvé`,
+            message: `La panne "${panneName}" pour "${engin.parc.name}" non trouvé`,
           },
         ];
       }
@@ -163,7 +172,7 @@ export class ImportService {
         update: upsertData, // Même structure
         create: upsertData, // Même structure
       });
-      //
+
       return [
         {
           success: true,

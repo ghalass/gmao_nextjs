@@ -132,19 +132,19 @@ const ALL_COLUMNS = [
 
   {
     key: "objectif_dispo",
-    label: "OBJECTIF DISP",
+    label: "OBJ DISP",
     sortable: true,
     category: "objectifs",
   },
   {
     key: "objectif_mtbf",
-    label: "OBJECTIF MTBF",
+    label: "OBJ MTBF",
     sortable: true,
     category: "objectifs",
   },
   {
     key: "objectif_tdm",
-    label: "OBJECTIF TDM",
+    label: "OBJ TDM",
     sortable: true,
     category: "objectifs",
   },
@@ -380,45 +380,9 @@ export default function RapportRjePage() {
     const ratio = val / obj;
 
     if (ratio >= 1) return "text-green-600 dark:text-green-400 font-semibold";
-    if (ratio >= 0.8)
+    if (ratio >= 0.95)
       return "text-yellow-600 dark:text-yellow-400 font-semibold";
     return "text-red-600 dark:text-red-400 font-semibold";
-  };
-
-  // Badge de statut selon la valeur
-  const getStatusBadge = (
-    value: any,
-    type: "dispo" | "mtbf" | "tdm",
-    row: any
-  ) => {
-    if (!highlightTargets) return null;
-
-    const val = parseFloat(value);
-    let obj: number | undefined;
-    if (type === "dispo") obj = parseFloat(row.objectif_dispo);
-    if (type === "mtbf") obj = parseFloat(row.objectif_mtbf);
-    if (type === "tdm") obj = parseFloat(row.objectif_tdm);
-
-    if (!obj || isNaN(val)) return null;
-    const ratio = val / obj;
-
-    if (ratio >= 1)
-      return (
-        <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-300">
-          OK
-        </Badge>
-      );
-    if (ratio >= 0.8)
-      return (
-        <Badge className="ml-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-300">
-          Moyen
-        </Badge>
-      );
-    return (
-      <Badge className="ml-2 bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900 dark:text-red-300">
-        Critique
-      </Badge>
-    );
   };
 
   // Vérifier si les données affichées correspondent à la date sélectionnée
@@ -939,17 +903,6 @@ export default function RapportRjePage() {
                             <TableCell key={col.key} className={className}>
                               <div className="flex items-center justify-center">
                                 <span>{cellValue}</span>
-                                {isValueCell &&
-                                  highlightTargets &&
-                                  getStatusBadge(
-                                    cellValue,
-                                    col.key.includes("dispo")
-                                      ? "dispo"
-                                      : col.key.includes("mtbf")
-                                      ? "mtbf"
-                                      : "tdm",
-                                    row
-                                  )}
                               </div>
                             </TableCell>
                           );
