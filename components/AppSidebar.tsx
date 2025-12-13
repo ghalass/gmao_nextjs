@@ -2,7 +2,6 @@
 
 import {
   Home,
-  InfoIcon,
   Settings,
   ChevronDown,
   Users,
@@ -18,12 +17,12 @@ import {
   FormInputIcon,
   Gauge,
   Puzzle,
-  Form,
   FileUpIcon,
   FolderCog2Icon,
   CalendarCheck,
   Ungroup,
   NotepadText,
+  BookOpenCheck,
 } from "lucide-react";
 
 import {
@@ -154,6 +153,12 @@ const rapportsItems = {
       url: "/rapports/etat-mensuel",
       icon: NotepadText,
       description: "Etat Mensuel",
+    },
+    {
+      title: "Analyse Indispo",
+      url: "/rapports/analyse-indispo-parc",
+      icon: BookOpenCheck,
+      description: "analyse-indispo",
     },
   ],
 };
