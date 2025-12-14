@@ -42,6 +42,7 @@ import { UserModal } from "@/components/users/UserModal";
 import { DeleteUserModal } from "@/components/users/DeleteUserModal";
 import { User } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "email" | "createdAt" | "roles";
 type SortDirection = "asc" | "desc";
@@ -263,46 +264,12 @@ export default function UsersPage() {
     Object.values(columnFilters).some((filter) => filter !== "");
 
   // Fonction d'export Excel
-  const handleExportToExcel = (): void => {
-    try {
-      // Préparer les données pour l'export
-      const exportData = filteredAndSortedUsers.map((user: User) => ({
-        Nom: user.name,
-        Email: user.email,
-        Statut: user.active ? "Actif" : "Inactif",
-        Rôles: user.roles?.map((role) => role.name).join(", "),
-      }));
-
-      // Convertir en CSV
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      // Créer et télécharger le fichier
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `utilisateurs_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedUsers.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("users-table", "Users");
   };
 
   // Composant d'en-tête de colonne avec tri amélioré
@@ -363,12 +330,12 @@ export default function UsersPage() {
           {/* Bouton d'export Excel */}
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedUsers.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -480,7 +447,7 @@ export default function UsersPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="users-table">
           <TableHeader>
             <TableRow>
               <TableCell className="w-12">#</TableCell>

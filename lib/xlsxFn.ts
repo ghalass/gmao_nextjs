@@ -1,5 +1,8 @@
+// lib/xlsxFn.ts
+
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export const exportExcel = (
   tableId: string,
@@ -11,7 +14,8 @@ export const exportExcel = (
   const table: HTMLElement | null = document.getElementById(tableId);
 
   if (!table) {
-    console.error(`Table with ID "${tableId}" not found`);
+    toast.error(`Table avec ID "${tableId}" non trouvée`);
+    console.error(`Table avec ID "${tableId}" non trouvée`);
     return;
   }
 
@@ -34,7 +38,7 @@ export const exportExcel = (
 
   const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(rows);
   const workbook: XLSX.WorkBook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Export");
+  XLSX.utils.book_append_sheet(workbook, worksheet, title);
 
   XLSX.writeFile(workbook, `${title}_${formattedDate}.xlsx`);
 };

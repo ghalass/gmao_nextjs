@@ -51,6 +51,7 @@ import {
   Info,
   Building,
 } from "lucide-react";
+import { exportExcel } from "@/lib/xlsxFn";
 
 // Options pour les mois
 const MONTHS = [
@@ -448,8 +449,11 @@ export default function UnitePhysiquePage() {
 
   // Export des données
   const handleExport = () => {
-    // TODO: Implémenter l'export CSV
-    console.log("Export des données...", flatData);
+    if (data.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("rapport-unite-physique", "Rapport_Unite_Physique");
   };
 
   const toggleShowAllSites = (checked: boolean) => {
@@ -966,7 +970,10 @@ export default function UnitePhysiquePage() {
             <CardContent>
               <div className="rounded-lg border overflow-hidden">
                 <div className="overflow-x-auto">
-                  <Table className={compactMode ? "text-sm" : ""}>
+                  <Table
+                    id="rapport-unite-physique"
+                    className={compactMode ? "text-sm" : ""}
+                  >
                     <TableHeader className="bg-muted/50 sticky top-0">
                       <TableRow>
                         {generateColumns

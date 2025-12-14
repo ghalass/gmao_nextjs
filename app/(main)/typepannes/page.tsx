@@ -39,6 +39,7 @@ import { TypepanneModal } from "@/components/typepannes/TypepanneModal";
 import { DeleteTypepanneModal } from "@/components/typepannes/DeleteTypepanneModal";
 import { Typepanne } from "@/hooks/useTypepannes";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "createdAt" | "pannesCount" | "parcsCount";
 type SortDirection = "asc" | "desc";
@@ -252,61 +253,13 @@ export default function TypepannesPage() {
     Object.values(columnFilters).some((filter) => filter !== "");
 
   // Fonction d'export Excel
-  const handleExportToExcel = (): void => {
-    try {
-      // Préparer les données pour l'export
-      const exportData = filteredAndSortedTypepannes.map(
-        (typepanne: Typepanne) => ({
-          Nom: typepanne.name,
-          Description: typepanne.description || "",
-          "Nombre de pannes": typepanne._count?.pannes || 0,
-          "Nombre de parcs associés": typepanne._count?.typepanneParc || 0,
-          "Date de création": typepanne.createdAt
-            ? new Date(typepanne.createdAt).toLocaleDateString("fr-FR")
-            : "",
-          "Dernière modification": typepanne.updatedAt
-            ? new Date(typepanne.updatedAt).toLocaleDateString("fr-FR")
-            : "",
-        })
-      );
-
-      if (exportData.length === 0) {
-        setError("Aucune donnée à exporter");
-        return;
-      }
-
-      // Convertir en CSV (format simple compatible avec Excel)
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      // Créer et télécharger le fichier
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `types_pannes_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedTypepannes.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("typepannes-table", "Typepannes");
   };
-
   // Composant d'en-tête de colonne avec tri amélioré
   const SortableHeader = ({
     field,
@@ -365,12 +318,12 @@ export default function TypepannesPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedTypepannes.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -483,7 +436,7 @@ export default function TypepannesPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="typepannes-table">
           <TableHeader>
             <TableRow>
               <SortableHeader field="name">

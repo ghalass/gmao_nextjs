@@ -224,13 +224,12 @@ export default function PannesPage() {
     globalSearch !== "" ||
     Object.values(columnFilters).some((filter) => filter !== "");
 
-  const handleExportToExcel = (): void => {
-    try {
-      exportExcel("my-table-id", "pannes");
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedPannes.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("pannes-table", "Pannes");
   };
 
   const SortableHeader = ({
@@ -289,7 +288,7 @@ export default function PannesPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedPannes.length === 0}
             className="flex items-center gap-2"
           >
@@ -340,7 +339,7 @@ export default function PannesPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="pannes-table">
           <TableHeader>
             <TableRow>
               <SortableHeader field="name">

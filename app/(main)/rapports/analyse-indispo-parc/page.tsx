@@ -53,6 +53,7 @@ import {
   Filter,
   BarChart3,
 } from "lucide-react";
+import { exportExcel } from "@/lib/xlsxFn";
 
 // Configuration des colonnes
 const ALL_COLUMNS = [
@@ -471,24 +472,11 @@ export default function AnalyseIndisponibilitePage() {
 
   // Export des données
   const handleExport = () => {
-    const headers = ALL_COLUMNS.filter((col) =>
-      visibleColumns.includes(col.key)
-    ).map((col) => col.label);
-    const rows = filteredAndSortedData.map((row) =>
-      ALL_COLUMNS.filter((col) => visibleColumns.includes(col.key))
-        .map((col) => {
-          const value = row[col.key];
-          return formatCellValue(value, col.key).replace("%", "");
-        })
-        .join(";")
-    );
-
-    const csv = [headers.join(";"), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `analyse-indisponibilite-${mois}-${annee}.csv`;
-    link.click();
+    if (filteredAndSortedData?.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("rapport-analyse-indispo", "Rapport_Analyse_Indisponibilite");
   };
 
   return (
@@ -555,7 +543,7 @@ export default function AnalyseIndisponibilitePage() {
                   disabled={flatData.length === 0}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Exporter CSV</span>
+                  <span className="hidden sm:inline">Exporter</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Exporter les données en CSV</TooltipContent>
@@ -898,7 +886,10 @@ export default function AnalyseIndisponibilitePage() {
             <CardContent>
               <div className="rounded-lg border overflow-hidden">
                 <div className="overflow-x-auto">
-                  <Table className={compactMode ? "text-sm" : ""}>
+                  <Table
+                    id="rapport-analyse-indispo"
+                    className={compactMode ? "text-sm" : ""}
+                  >
                     <TableHeader className="bg-muted/50 sticky top-0">
                       <TableRow>
                         {ALL_COLUMNS.filter((col) =>

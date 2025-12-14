@@ -40,6 +40,7 @@ import { SiteModal } from "@/components/sites/SiteModal";
 import { DeleteSiteModal } from "@/components/sites/DeleteSiteModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { type SiteFormData } from "@/lib/validations/siteSchema";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "active";
 type SortDirection = "asc" | "desc";
@@ -256,44 +257,12 @@ export default function SitesPage() {
     Object.values(columnFilters).some((filter) => filter !== "");
 
   // 🆕 Fonction d'export Excel
-  const handleExportToExcel = (): void => {
-    try {
-      // Préparer les données pour l'export
-      const exportData = filteredAndSortedSites.map((site: Site) => ({
-        Nom: site.name,
-        Statut: site.active ? "Actif" : "Inactif",
-      }));
-
-      // Convertir en CSV (format simple compatible avec Excel)
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      // Créer et télécharger le fichier
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `sites_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedSites.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("sites-table", "Sites");
   };
 
   // 🆕 Composant d'en-tête de colonne avec tri amélioré
@@ -354,12 +323,12 @@ export default function SitesPage() {
           {/* 🆕 Bouton d'export Excel */}
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedSites.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -471,7 +440,7 @@ export default function SitesPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="sites-table">
           <TableHeader>
             <TableRow>
               <SortableHeader field="name">

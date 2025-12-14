@@ -46,6 +46,7 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
+import { exportExcel } from "@/lib/xlsxFn";
 
 // Configuration des colonnes
 const ALL_COLUMNS = [
@@ -443,8 +444,11 @@ export default function EtatMensuelPage() {
 
   // Export des données
   const handleExport = () => {
-    // TODO: Implémenter l'export CSV
-    console.log("Export des données...");
+    if (filteredAndSortedData?.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("rapport-etat-mensuel", "Rapport_Etat_Mensuel");
   };
 
   return (
@@ -802,7 +806,10 @@ export default function EtatMensuelPage() {
             <CardContent>
               <div className="rounded-lg border overflow-hidden">
                 <div className="overflow-x-auto">
-                  <Table className={compactMode ? "text-sm" : ""}>
+                  <Table
+                    id="rapport-etat-mensuel"
+                    className={compactMode ? "text-sm" : ""}
+                  >
                     <TableHeader className="bg-muted/50 sticky top-0">
                       <TableRow>
                         {ALL_COLUMNS.filter((col) =>

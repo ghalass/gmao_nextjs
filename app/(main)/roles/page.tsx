@@ -39,6 +39,7 @@ import { DeleteRoleModal } from "@/components/roles/DeleteRoleModal";
 import { Role } from "@/lib/types";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { exportExcel } from "@/lib/xlsxFn";
 
 type SortField = "name" | "permissions";
 type SortDirection = "asc" | "desc";
@@ -234,49 +235,12 @@ export default function RolesPage() {
     Object.values(columnFilters).some((filter) => filter !== "");
 
   // Fonction d'export Excel
-  const handleExportToExcel = (): void => {
-    try {
-      // Préparer les données pour l'export
-      const exportData = filteredAndSortedRoles.map((role: Role) => ({
-        Nom: role.name,
-        Description: role.description || "",
-        "Nombre de permissions": role.permissions?.length || 0,
-        Permissions:
-          role.permissions
-            ?.map((p) => `${p.name} (${p.resource} - ${p.action || "tous"})`)
-            .join(", ") || "",
-      }));
-
-      // Convertir en CSV
-      const headers = Object.keys(exportData[0] || {}).join(";");
-      const csvData = exportData
-        .map((row) =>
-          Object.values(row)
-            .map((value) => `"${value}"`)
-            .join(";")
-        )
-        .join("\n");
-
-      const csvContent = `${headers}\n${csvData}`;
-
-      // Créer et télécharger le fichier
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `roles_${new Date().toISOString().split("T")[0]}.csv`
-      );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedRoles.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("roles-table", "Roles");
   };
 
   // Composant d'en-tête de colonne avec tri amélioré
@@ -337,12 +301,12 @@ export default function RolesPage() {
           {/* Bouton d'export Excel */}
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedRoles.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button asChild>
             <Link href="/roles/create">
@@ -456,7 +420,7 @@ export default function RolesPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="roles-table">
           <TableHeader>
             <TableRow>
               <TableCell className="w-12">#</TableCell>

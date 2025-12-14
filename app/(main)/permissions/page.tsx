@@ -334,13 +334,12 @@ export default function PermissionsPage() {
     Object.values(columnFilters).some((filter) => filter !== "");
 
   // 🆕 Fonction d'export Excel
-  const handleExportToExcel = (): void => {
-    try {
-      exportExcel("my-table-id", "pannes");
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedPermissions.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("permissions-table", "Permissions");
   };
 
   // 🆕 Composant d'en-tête de colonne avec tri amélioré
@@ -424,12 +423,12 @@ export default function PermissionsPage() {
           {/* 🆕 Bouton d'export Excel */}
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedPermissions.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -540,7 +539,7 @@ export default function PermissionsPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="permissions-table">
           <TableHeader>
             <TableRow>
               <SortableHeader field="name">

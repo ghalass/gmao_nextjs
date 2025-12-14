@@ -65,6 +65,7 @@ import {
   ChevronUpCircle,
   ChevronDownCircle,
 } from "lucide-react";
+import { exportExcel } from "@/lib/xlsxFn";
 
 // Options pour les mois
 const MONTHS = [
@@ -495,8 +496,11 @@ export default function EtatGeneralPage() {
 
   // Export (à implémenter)
   const handleExport = () => {
-    console.log("Export des données...", flatData);
-    // TODO: Implémenter l'export CSV
+    if (paginatedData?.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("rapport-etat-general", "Rapport_Etat_General");
   };
 
   return (
@@ -1108,7 +1112,10 @@ export default function EtatGeneralPage() {
             <CardContent>
               <div className="rounded-lg border overflow-hidden">
                 <div className="overflow-x-auto">
-                  <Table className={compactMode ? "text-sm" : ""}>
+                  <Table
+                    id="rapport-etat-general"
+                    className={compactMode ? "text-sm" : ""}
+                  >
                     <TableHeader className="bg-muted/50 sticky top-0">
                       <TableRow>
                         {DEFAULT_COLUMNS.filter((col) =>

@@ -80,6 +80,7 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
+import { exportExcel } from "@/lib/xlsxFn";
 
 // Toutes les colonnes possibles avec type de tri
 const ALL_COLUMNS = [
@@ -400,8 +401,11 @@ export default function RapportRjePage() {
 
   // Gérer l'export
   const handleExport = () => {
-    // TODO: Implémenter l'export CSV/Excel
-    console.log("Export des données...");
+    if (data.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("rapport-rje-table", "Rapport_RJE");
   };
 
   return (
@@ -836,7 +840,10 @@ export default function RapportRjePage() {
               </div>
 
               <div className="overflow-auto">
-                <Table className={compactMode ? "text-sm" : ""}>
+                <Table
+                  id="rapport-rje-table"
+                  className={compactMode ? "text-sm" : ""}
+                >
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       {ALL_COLUMNS.filter((c) =>

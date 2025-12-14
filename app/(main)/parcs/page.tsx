@@ -238,13 +238,12 @@ export default function ParcsPage() {
     globalSearch !== "" ||
     Object.values(columnFilters).some((filter) => filter !== "");
 
-  const handleExportToExcel = (): void => {
-    try {
-      exportExcel("my-table-id", "parcs");
-    } catch (error) {
-      console.error("Erreur lors de l'export Excel:", error);
-      setError("Erreur lors de l'export des données");
+  const handleExport = () => {
+    if (paginatedParcs.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
     }
+    exportExcel("parcs-table", "parcs");
   };
 
   const SortableHeader = ({
@@ -303,12 +302,12 @@ export default function ParcsPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={handleExportToExcel}
+            onClick={handleExport}
             disabled={filteredAndSortedParcs.length === 0}
             className="flex items-center gap-2"
           >
             <Download className="h-4 w-4" />
-            Exporter Excel
+            Exporter
           </Button>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
@@ -417,7 +416,7 @@ export default function ParcsPage() {
       </div>
 
       <div className="border rounded-lg bg-card">
-        <Table>
+        <Table id="parcs-table">
           <TableHeader>
             <TableRow>
               <SortableHeader field="name">

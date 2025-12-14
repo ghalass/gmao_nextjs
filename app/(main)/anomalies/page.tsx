@@ -59,6 +59,7 @@ import { AnomalieModal } from "@/components/anomalies/AnomalieModal";
 import { AnomalieFilters } from "@/components/anomalies/AnomalieFilters";
 import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
 import { Anomalie } from "@/lib/types/anomalie";
+import { exportExcel } from "@/lib/xlsxFn";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -109,7 +110,11 @@ export default function AnomaliesPage() {
   };
 
   const handleExport = () => {
-    toast.info("Fonctionnalité d'export à implémenter");
+    if (paginatedAnomalies.length === 0) {
+      console.warn("Aucune donnée à exporter");
+      return;
+    }
+    exportExcel("backlogs-table", "backlogs");
   };
 
   const getStatusBadgeColor = (statut: StatutAnomalie) => {
@@ -456,7 +461,7 @@ export default function AnomaliesPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-hidden">
-            <Table>
+            <Table id="backlogs-table">
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="font-semibold">N° Backlog</TableHead>
