@@ -159,7 +159,7 @@ export default function AnalyseIndisponibilitePage() {
   const [highlightCoefficients, setHighlightCoefficients] = useState(true);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [compactMode, setCompactMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const [selectedTypeParc, setSelectedTypeParc] = useState<string>("all");
   const [selectedParc, setSelectedParc] = useState<string>("all");
 

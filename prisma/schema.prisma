@@ -189,11 +189,13 @@ model Panne {
 }
 
 model Saisiehrm {
-  id        String   @id @default(cuid())
-  du        DateTime
-  enginId   String
-  siteId    String
-  hrm       Float
+  id       String   @id @default(cuid())
+  du       DateTime
+  enginId  String
+  siteId   String
+  hrm      Float
+  compteur Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

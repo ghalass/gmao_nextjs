@@ -204,7 +204,7 @@ export default function RapportRjePage() {
 
   // États UI supplémentaires
   const [showColumnManager, setShowColumnManager] = useState(false);
-  const [compactMode, setCompactMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const [highlightTargets, setHighlightTargets] = useState(true);
 
   const { sitesQuery } = useSites();

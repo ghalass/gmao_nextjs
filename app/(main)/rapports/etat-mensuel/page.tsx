@@ -195,7 +195,7 @@ export default function EtatMensuelPage() {
   const [highlightTargets, setHighlightTargets] = useState(true);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [compactMode, setCompactMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
 
   // Extraction du mois et de l'année depuis la date
   const [mois, annee] = useMemo(() => {

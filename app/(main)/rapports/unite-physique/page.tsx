@@ -106,7 +106,7 @@ export default function UnitePhysiquePage() {
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [compactMode, setCompactMode] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const [showAllSites, setShowAllSites] = useState(true);
   const [selectedSites, setSelectedSites] = useState<string[]>([]);
 

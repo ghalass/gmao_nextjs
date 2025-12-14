@@ -1,7 +1,7 @@
 pnpm create next-app@latest gmao
 
 pnpm dlx shadcn@latest init
-pnpm dlx shadcn@latest add button scroll-area tabs progress
+pnpm dlx shadcn@latest add button scroll-area tabs progress accordion command
 pnpm add next-themes
 
 pnpm add prisma @types/node @types/pg --save-dev

@@ -23,6 +23,7 @@ import {
   Ungroup,
   NotepadText,
   BookOpenCheck,
+  Boxes,
 } from "lucide-react";
 
 import {
@@ -159,6 +160,12 @@ const rapportsItems = {
       url: "/rapports/analyse-indispo-parc",
       icon: BookOpenCheck,
       description: "analyse-indispo",
+    },
+    {
+      title: "Etat Général",
+      url: "/rapports/etat-general",
+      icon: Boxes,
+      description: "etat-general",
     },
   ],
 };

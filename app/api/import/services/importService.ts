@@ -162,7 +162,7 @@ export class ImportService {
         engin: { connect: { id: engin.id } },
       };
 
-      const saise = await prisma.saisiehim.upsert({
+      const saisie = await prisma.saisiehim.upsert({
         where: {
           panneId_saisiehrmId: {
             panneId: panne.id,
@@ -176,7 +176,7 @@ export class ImportService {
       return [
         {
           success: true,
-          // data: saise,
+          // data: saisie,
           message: `SaisieHim importé avec succès`,
         },
       ];
@@ -190,6 +190,7 @@ export class ImportService {
     try {
       const du = convertField(data.du, "date");
       const hrm = convertField(data.hrm, "number") ?? 0;
+      const compteur = convertField(data.compteur, "number") ?? 0;
 
       // Relations
       const enginName = convertField(data.enginName, "string");
@@ -223,8 +224,6 @@ export class ImportService {
         ];
       }
       if (hrm === null) {
-        console.log(hrm);
-
         return [
           {
             success: false,
@@ -248,6 +247,16 @@ export class ImportService {
             success: false,
             data: data,
             message: `Erreur: Le champ 'hrm' ne doit pas être positif`,
+          },
+        ];
+      }
+
+      if (compteur < 0) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'compteur' ne doit pas être positif`,
           },
         ];
       }
@@ -276,7 +285,7 @@ export class ImportService {
         ];
       }
 
-      const saise = await prisma.saisiehrm.upsert({
+      const saisie = await prisma.saisiehrm.upsert({
         where: {
           du_enginId: {
             // Utilisez le nom de la contrainte unique composée
@@ -289,19 +298,21 @@ export class ImportService {
           enginId: engin.id,
           siteId: site.id,
           hrm,
+          compteur,
         },
         create: {
           du: du,
           enginId: engin.id,
           siteId: site.id,
           hrm,
+          compteur,
         },
       });
 
       return [
         {
           success: true,
-          data: saise,
+          data: saisie,
           message: `Saisie importé avec succès`,
         },
       ];
