@@ -1,5 +1,6 @@
 // app/api/import/services/importService.ts
 import { convertField, isValidFormat } from "@/lib/convertField";
+import { ACTION } from "@/lib/enums";
 import { prisma } from "@/lib/prisma";
 import { log } from "console";
 import { format } from "date-fns";
@@ -46,6 +47,10 @@ export class ImportService {
           return await this.importPannes(data);
         case "users":
           return await this.importUsers(data);
+        case "permissions":
+          return await this.importPermissions(data);
+        case "roles":
+          return await this.importRoles(data);
         case "anomalies":
           return await this.importAnomalies(data);
         case "saisie_hrm":
@@ -595,14 +600,6 @@ export class ImportService {
         ];
       }
 
-      const newData = {
-        name: name,
-        typepanneId: typepanne.id,
-        parcId: parc.id,
-        description: description,
-      };
-      // console.log(newData);
-
       // Créer ou mettre à jour la panne avec relation implicite
       const panne = await prisma.panne.upsert({
         where: { name: name },
@@ -798,6 +795,170 @@ export class ImportService {
         },
       ];
     } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+  async importPermissions(data: any) {
+    try {
+      const name = convertField(data.name, "string");
+      const resource = convertField(data.resource, "string");
+      const action: ACTION = convertField(data.action, "string");
+      const description = convertField(data.description, "string");
+
+      const requiredFields = {
+        name: name,
+        resource: resource,
+        action: action,
+        description: description,
+      };
+
+      for (const [field, value] of Object.entries(requiredFields)) {
+        if (!value || value.trim() === "") {
+          return [
+            {
+              success: false,
+              data: data,
+              message: `Erreur: Le champ '${field}' est requis`,
+            },
+          ];
+        }
+      }
+
+      if (!action || !Object.values(ACTION).includes(action as ACTION)) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'action' est requis et doit être une valeur valide (create, read, update, delete)`,
+          },
+        ];
+      }
+
+      const newData = {
+        name: name.toLowerCase(),
+        action: action,
+        description,
+        resource: resource.toLowerCase(),
+      };
+
+      const result = await prisma.permission.upsert({
+        where: { name: name },
+        update: newData,
+        create: newData,
+      });
+
+      return [
+        {
+          success: true,
+          data: result,
+          message: `Permission ${name} importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      console.log(error);
+
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+  async importRoles(data: any) {
+    try {
+      const name = convertField(data.name, "string")?.trim().toLowerCase();
+      const description = convertField(data.description, "string");
+      const permissions = convertField(data.permissions, "string")
+        .trim()
+        .toLowerCase(); // NAMESs séparés par des virgules
+
+      const requiredFields = {
+        name: name,
+        description: description,
+        permissions: permissions,
+      };
+
+      for (const [field, value] of Object.entries(requiredFields)) {
+        if (!value || value.trim() === "") {
+          return [
+            {
+              success: false,
+              data: data,
+              message: `Erreur: Le champ '${field}' est requis`,
+            },
+          ];
+        }
+      }
+
+      // Extraction des NAMESs
+      const permissionNames = permissions
+        .split(",")
+        .map((name: string) => name.trim())
+        .filter(Boolean);
+
+      // Vérifier que les permissions existent
+      const existingPermissions = await prisma.permission.findMany({
+        where: {
+          name: { in: permissionNames },
+        },
+        select: { id: true, name: true },
+      });
+      // Extraire les noms existants
+      const existingPermissionNames = existingPermissions.map((p) =>
+        p.name.toLowerCase()
+      );
+      // Trouver les permissions manquantes
+      const missingPermissions = permissionNames.filter(
+        (name: string) => !existingPermissionNames.includes(name)
+      );
+      if (missingPermissions.length > 0) {
+        return [
+          {
+            success: false,
+            data,
+            message: `Erreur : les permissions suivantes n'existent pas : ${missingPermissions.join(
+              ", "
+            )}`,
+          },
+        ];
+      }
+
+      // Upsert propre avec reset des relations
+      const result = await prisma.role.upsert({
+        where: { name },
+        update: {
+          description,
+          permissions: {
+            connect: existingPermissions,
+          },
+        },
+        create: {
+          name,
+          description,
+          permissions: {
+            connect: existingPermissions,
+          },
+        },
+      });
+
+      return [
+        {
+          success: true,
+          data: result,
+          message: `Rôle '${name}' importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      console.log(error);
+
       return [
         {
           success: false,

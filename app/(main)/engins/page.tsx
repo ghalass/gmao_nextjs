@@ -603,7 +603,7 @@ export default function EnginsPage() {
               paginatedEngins.map((engin: Engin) => (
                 <TableRow
                   key={engin?.id}
-                  className="hover:bg-muted/50 cursor-pointer hover:bg-muted"
+                  className="hover:bg-muted/50 cursor-pointer"
                   onClick={() => handleViewDetails(engin)}
                 >
                   <TableCell className="font-medium">

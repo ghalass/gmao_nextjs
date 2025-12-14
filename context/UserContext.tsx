@@ -80,18 +80,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         // Convertir en UserDetail
         const typedUser: UserDetail = {
-          id: userData.id || "",
-          name: userData.name || "",
-          email: userData.email || "",
-          active: Boolean(userData.active),
-          createdAt: userData.createdAt || new Date().toISOString(),
-          updatedAt: userData.updatedAt || new Date().toISOString(),
-          roles: Array.isArray(userData.roles) ? userData.roles : [],
-          permissions: Array.isArray(userData.permissions)
-            ? userData.permissions
+          id: userData?.id || "",
+          name: userData?.name || "",
+          email: userData?.email || "",
+          active: Boolean(userData?.active),
+          createdAt: userData?.createdAt || new Date().toISOString(),
+          updatedAt: userData?.updatedAt || new Date().toISOString(),
+          roles: Array.isArray(userData?.roles) ? userData?.roles : [],
+          permissions: Array.isArray(userData?.permissions)
+            ? userData?.permissions
             : [],
-          roleNames: Array.isArray(userData.roleNames)
-            ? userData.roleNames
+          roleNames: Array.isArray(userData?.roleNames)
+            ? userData?.roleNames
             : [],
         };
 

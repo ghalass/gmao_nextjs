@@ -278,7 +278,7 @@ export default function AnomaliesPage() {
       {/* Header avec statistiques */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Anomalies
           </h1>
           <p className="text-muted-foreground">
@@ -392,13 +392,13 @@ export default function AnomaliesPage() {
       {/* Cartes de statistiques */}
       {statsQuery.data && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-background to-secondary/10">
+          <Card className="bg-linear-to-br from-background to-secondary/10">
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{statsQuery.data.total}</div>
               <p className="text-sm text-muted-foreground">Total anomalies</p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-background to-green-500/10">
+          <Card className="bg-linear-to-br from-background to-green-500/10">
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {statsQuery.data.parStatut.EXECUTE || 0}
@@ -406,7 +406,7 @@ export default function AnomaliesPage() {
               <p className="text-sm text-muted-foreground">Exécutées</p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-background to-red-500/10">
+          <Card className="bg-linear-to-br from-background to-red-500/10">
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {statsQuery.data.parPriorite.ELEVEE || 0}
@@ -414,7 +414,7 @@ export default function AnomaliesPage() {
               <p className="text-sm text-muted-foreground">Priorité élevée</p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-background to-yellow-500/10">
+          <Card className="bg-linear-to-br from-background to-yellow-500/10">
             <CardContent className="pt-6">
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {statsQuery.data.parStatut.ATTENTE_PDR || 0}
