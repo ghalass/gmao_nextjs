@@ -12,8 +12,11 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <SidebarTrigger className="hover:bg-accent transition-colors rounded-md p-2" />
         <div className="hidden sm:block">
-          <h1 className="text-lg font-semibold text-foreground">
-            <Link href={"/"}>{APP_NAME}</Link>
+          <h1 className="text-lg font-semibold  text-primary">
+            <Link href={"/"}>
+              {APP_NAME}{" "}
+              <span className="text-xs text-foreground">by GHALASS</span>
+            </Link>
           </h1>
         </div>
       </div>

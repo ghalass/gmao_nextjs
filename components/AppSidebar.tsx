@@ -262,7 +262,7 @@ export function AppSidebar() {
                       )}
                     >
                       <Link href={item.url}>
-                        <item.icon className="w-4 h-4" />
+                        <item.icon className="w-4 h-4 text-primary" />
                         <span>{item.title}</span>
                         {isActive && (
                           <div className="ml-auto w-1 h-4 bg-primary rounded-full" />
