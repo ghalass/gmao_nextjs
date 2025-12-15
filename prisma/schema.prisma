@@ -10,6 +10,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ****************** GESTION DES USERS PERMISSIONS & ROLES ******************
+
 // implicite relation between Permission and Role
 model Permission {
   id          String  @id @default(cuid())
@@ -55,6 +57,8 @@ model User {
   @@map("user")
 }
 
+// ****************** GESTION DES DONNEES DE BASE ******************
+
 model Site {
   id     String  @id @default(cuid())
   name   String  @unique
@@ -94,11 +98,15 @@ model Parc {
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
 
-  // CORRECTION : objectifs au pluriel (relation one-to-many)
-  objectifs Objectif[] // ← PLURIEL
+  // Relation 1-M avec Typeparc
+  typeparc Typeparc @relation(fields: [typeparcId], references: [id])
+
+  // Relations M-1 avec Objectif
+  objectifs   Objectif[] // ← PLURIEL
   // Relation many-to-many implicite avec Panne
-  pannes    Panne[] // ← Relation implicite
-  typeparc  Typeparc   @relation(fields: [typeparcId], references: [id])
+  pannes      Panne[] // ← Relation implicite
+  // Relations M-M avec TypeOrgane
+  typeOrganes TypeOrgane[]
 
   @@map("parc")
 }
@@ -149,11 +157,12 @@ model Engin {
   updatedAt           DateTime @updatedAt
 
   // Relations
-  parc      Parc        @relation(fields: [parcId], references: [id], onDelete: Restrict)
-  site      Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  saisiehrm Saisiehrm[]
-  saisiehim Saisiehim[]
-  anomalies Anomalie[]
+  parc       Parc        @relation(fields: [parcId], references: [id], onDelete: Restrict)
+  site       Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  saisiehrm  Saisiehrm[]
+  saisiehim  Saisiehim[]
+  anomalies  Anomalie[]
+  MvtOrganes MvtOrgane[]
 
   @@map("engin")
 }
@@ -187,6 +196,8 @@ model Panne {
 
   @@map("panne")
 }
+
+// ****************** GESTION DES HIM & HRM ******************
 
 model Saisiehrm {
   id       String   @id @default(cuid())
@@ -229,6 +240,181 @@ model Saisiehim {
   @@unique([panneId, saisiehrmId])
   @@map("saisie_him")
 }
+
+// ****************** GESTION DES BACKLOGS ******************
+
+model Anomalie {
+  id            String         @id @default(cuid())
+  numeroBacklog String         @unique // TO14-25-001, TO14-25-002, etc.
+  dateDetection DateTime
+  description   String
+  source        SourceAnomalie // VS, VJ, etc.
+  priorite      Priorite
+  besoinPDR     Boolean        @default(false)
+  quantite      Int? // Qté
+  reference     String? // Référence pièce
+  code          String? // Code
+  stock         String? // Stock
+  numeroBS      String? // N° BS
+  programmation String? // Programmation (VS, VJ, PH,…)
+  sortiePDR     String? // Sortie PDR
+  equipe        String? // Équipe
+  statut        StatutAnomalie
+  dateExecution DateTime?
+  confirmation  String? // Confirmation
+  observations  String? // Observations
+
+  // Relations
+  enginId String
+  siteId  String
+
+  engin Engin @relation(fields: [enginId], references: [id])
+  site  Site  @relation(fields: [siteId], references: [id])
+
+  // Timestamps
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  historiqueStatutAnomalies HistoriqueStatutAnomalie[]
+
+  @@map("anomalie")
+}
+
+model HistoriqueStatutAnomalie {
+  id             String         @id @default(cuid())
+  anomalieId     String
+  ancienStatut   StatutAnomalie
+  nouveauStatut  StatutAnomalie
+  dateChangement DateTime       @default(now())
+  commentaire    String?
+
+  anomalie Anomalie @relation(fields: [anomalieId], references: [id])
+
+  @@map("statut_anomalie")
+}
+
+// Enums pour les valeurs prédéfinies
+enum StatutEngin {
+  ACTIF
+  INACTIF
+  EN_MAINTENANCE
+  HORS_SERVICE
+}
+
+enum SourceAnomalie {
+  VS
+  VJ
+  INSPECTION
+  AUTRE
+}
+
+enum Priorite {
+  ELEVEE
+  MOYENNE
+  FAIBLE
+}
+
+enum StatutAnomalie {
+  ATTENTE_PDR
+  PDR_PRET
+  NON_PROGRAMMEE
+  PROGRAMMEE
+  EXECUTE
+}
+
+// ****************** GESTION DES ORGANES ******************
+
+model Organe {
+  id           String         @id @default(cuid())
+  name         String
+  typeOrganeId String
+  marque       String?
+  sn           String?
+  date_mes     DateTime?
+  origine      OrigineOrgane?
+  circuit      String?
+  hrm_initial  Decimal        @default(0)
+  obs          String?
+  active       Boolean?       @default(true)
+
+  // Relations 1-M
+  type_organe          TypeOrgane       @relation(fields: [typeOrganeId], references: [id])
+  // Relations M-M
+  historiqueMouvements MvtOrgane[]
+  RevisionOrganes      RevisionOrgane[]
+
+  @@unique([name, typeOrganeId])
+  @@map("organe")
+}
+
+enum OrigineOrgane {
+  BRC
+  APPRO
+  AUTRE
+}
+
+model TypeOrgane {
+  id   String @id @default(cuid())
+  name String
+
+  // Relations M-M
+  parcs   Parc[]
+  // Relations M-1
+  organes Organe[]
+
+  @@unique([name])
+  @@map("type_organe")
+}
+
+model MvtOrgane {
+  id         String                    @id @default(cuid())
+  organeId   String
+  enginId    String
+  date_mvt   DateTime
+  type_mvt   TypeMouvementOrgane
+  cause      String
+  type_cause TypeCauseMouvementOrgane?
+  obs        String?
+  test       String?
+
+  // Relations
+  organe Organe @relation(fields: [organeId], references: [id])
+  engin  Engin  @relation(fields: [enginId], references: [id])
+
+  @@unique([organeId, enginId, date_mvt, type_mvt])
+  @@map("mvt_organe")
+}
+
+enum TypeMouvementOrgane {
+  POSE
+  DEPOSE
+}
+
+enum TypeCauseMouvementOrgane {
+  PREVENTIF
+  INCIDENT
+}
+
+model RevisionOrgane {
+  id       String             @id @default(cuid())
+  organeId String
+  date_mvt DateTime
+  type_rg  TypeRevisionOrgane
+  obs      String?
+
+  // Relations
+  organe Organe @relation(fields: [organeId], references: [id])
+
+  @@unique([organeId, date_mvt, type_rg])
+  @@map("revision_organe")
+}
+
+enum TypeRevisionOrgane {
+  VP
+  RG
+  INTERVENTION
+}
+
+// ****************** LUBRIFIANTS ******************
 
 model Typelubrifiant {
   id   String @id @default(cuid())
@@ -299,82 +485,4 @@ model Objectif {
 
   @@unique([annee, parcId, siteId])
   @@map("objectif")
-}
-
-model Anomalie {
-  id            String         @id @default(cuid())
-  numeroBacklog String         @unique // TO14-25-001, TO14-25-002, etc.
-  dateDetection DateTime
-  description   String
-  source        SourceAnomalie // VS, VJ, etc.
-  priorite      Priorite
-  besoinPDR     Boolean        @default(false)
-  quantite      Int? // Qté
-  reference     String? // Référence pièce
-  code          String? // Code
-  stock         String? // Stock
-  numeroBS      String? // N° BS
-  programmation String? // Programmation (VS, VJ, PH,…)
-  sortiePDR     String? // Sortie PDR
-  equipe        String? // Équipe
-  statut        StatutAnomalie
-  dateExecution DateTime?
-  confirmation  String? // Confirmation
-  observations  String? // Observations
-
-  // Relations
-  enginId String
-  siteId  String
-
-  engin Engin @relation(fields: [enginId], references: [id])
-  site  Site  @relation(fields: [siteId], references: [id])
-
-  // Timestamps
-  createdAt                 DateTime                   @default(now())
-  updatedAt                 DateTime                   @updatedAt
-  historiqueStatutAnomalies HistoriqueStatutAnomalie[]
-
-  @@map("anomalie")
-}
-
-model HistoriqueStatutAnomalie {
-  id             String         @id @default(cuid())
-  anomalieId     String
-  ancienStatut   StatutAnomalie
-  nouveauStatut  StatutAnomalie
-  dateChangement DateTime       @default(now())
-  commentaire    String?
-
-  anomalie Anomalie @relation(fields: [anomalieId], references: [id])
-
-  @@map("historique_statut_anomalie")
-}
-
-// Enums pour les valeurs prédéfinies
-enum StatutEngin {
-  ACTIF
-  INACTIF
-  EN_MAINTENANCE
-  HORS_SERVICE
-}
-
-enum SourceAnomalie {
-  VS
-  VJ
-  INSPECTION
-  AUTRE
-}
-
-enum Priorite {
-  ELEVEE
-  MOYENNE
-  FAIBLE
-}
-
-enum StatutAnomalie {
-  ATTENTE_PDR
-  PDR_PRET
-  NON_PROGRAMMEE
-  PROGRAMMEE
-  EXECUTE
 }

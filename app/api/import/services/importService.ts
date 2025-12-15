@@ -2,32 +2,6 @@
 import { convertField, isValidFormat } from "@/lib/convertField";
 import { ACTION } from "@/lib/enums";
 import { prisma } from "@/lib/prisma";
-import { log } from "console";
-import { format } from "date-fns";
-
-enum SourceAnomalie {
-  VS = "VS",
-  VJ = "VJ",
-  INSPECTION = "INSPECTION",
-  AUTRE = "AUTRE",
-}
-// VS;VJ;INSPECTION;AUTRE
-
-enum Priorite {
-  ELEVEE = "ELEVEE",
-  MOYENNE = "MOYENNE",
-  FAIBLE = "FAIBLE",
-}
-
-enum StatutAnomalie {
-  ATTENTE_PDR = "ATTENTE_PDR",
-  PDR_PRET = "PDR_PRET",
-  NON_PROGRAMMEE = "NON_PROGRAMMEE",
-  PROGRAMMEE = "PROGRAMMEE",
-  EXECUTE = "EXECUTE",
-}
-
-// ATTENTE_PDR;PDR_PRET;NON_PROGRAMMEE;PROGRAMMEE;EXECUTE
 
 export class ImportService {
   async importData(sheetName: string, data: any) {
@@ -45,19 +19,34 @@ export class ImportService {
           return await this.importTypePannes(data);
         case "pannes":
           return await this.importPannes(data);
+
+        // GESTION DES USERS & ROLES
         case "users":
           return await this.importUsers(data);
         case "permissions":
           return await this.importPermissions(data);
         case "roles":
           return await this.importRoles(data);
+
+        // GESTION DES ANOMALIES
         case "anomalies":
           return await this.importAnomalies(data);
+
+        // SAISIE HRM & HIMS
         case "saisie_hrm":
           return await this.importSaisieHrm(data);
         case "saisie_hims":
           return await this.importSaisieHims(data);
 
+        // GESTION DES ORGANEs & MOUVEMENTS
+        case "type_organe":
+          return await this.importTypeOrganes(data);
+        case "organe":
+          return await this.importOrganes(data);
+        case "mvt_organe":
+          return await this.importMvtOrgane(data);
+
+        //
         default:
           throw new Error(`Onglet non supporté: ${sheetName}`);
       }
@@ -67,6 +56,340 @@ export class ImportService {
     }
   }
 
+  // LES FONCTIONS D'IMPORTS SPÉCIFIQUES
+  //
+  async importMvtOrgane(data: any) {
+    try {
+      const organeName = convertField(data.organe, "string");
+      const enginName = convertField(data.engin, "string");
+      const date_mvt = convertField(data.date_mvt, "date");
+      const type_mvt: TypeMouvementOrgane = convertField(
+        data.type_mvt,
+        "string"
+      );
+      const cause = convertField(data.cause, "string");
+      const type_cause: TypeCauseMouvementOrgane = convertField(
+        data.type_cause,
+        "string"
+      );
+      const obs = convertField(data.obs, "string");
+
+      const requiredFields = {
+        organe: organeName,
+        enginName: enginName,
+        type_mvt: type_mvt,
+        cause: cause,
+        type_cause: type_cause,
+      };
+      for (const [field, value] of Object.entries(requiredFields)) {
+        if (!value || value.trim() === "") {
+          return [
+            {
+              success: false,
+              data: data,
+              message: `Erreur: Le champ '${field}' est requis`,
+            },
+          ];
+        }
+      }
+
+      if (
+        !type_mvt ||
+        !Object.values(TypeMouvementOrgane).includes(
+          type_mvt as TypeMouvementOrgane
+        )
+      ) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'type_mvt' est requis et doit être une valeur valide (POSE, DEPOSE)`,
+          },
+        ];
+      }
+      if (
+        !type_cause ||
+        !Object.values(TypeCauseMouvementOrgane).includes(
+          type_cause as TypeCauseMouvementOrgane
+        )
+      ) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'type_cause' est requis et doit être une valeur valide (PREVENTIF, INCIDENT)`,
+          },
+        ];
+      }
+
+      if (!date_mvt) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'date_mvt' est requis`,
+          },
+        ];
+      }
+
+      const engin = await prisma.engin.findUnique({
+        where: { name: enginName },
+      });
+
+      const organe = await prisma.organe.findFirst({
+        where: {
+          name: organeName, // Cherche par nom d'organe (pas engin)
+          type_organe: {
+            parcs: {
+              some: {
+                id: engin?.parcId, // Vérifie que le type d'organe est associé à ce parc
+              },
+            },
+          },
+        },
+        include: {
+          type_organe: true,
+        },
+      });
+
+      if (!organe) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `organe "${organeName}" non trouvé`,
+          },
+        ];
+      }
+
+      const newData = {
+        organeId: organe.id,
+        enginId: engin?.id!,
+        date_mvt,
+        type_mvt,
+        cause,
+        type_cause,
+        obs,
+      };
+
+      const saisie = await prisma.mvtOrgane.upsert({
+        where: {
+          organeId_enginId_date_mvt_type_mvt: {
+            organeId: organe.id,
+            enginId: engin?.id!,
+            date_mvt: date_mvt,
+            type_mvt: type_mvt,
+          },
+        },
+        update: newData,
+        create: newData,
+      });
+
+      return [
+        {
+          success: true,
+          data: saisie,
+          message: `Saisie importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
+  async importOrganes(data: any) {
+    try {
+      const name = convertField(data.name, "string");
+      const type_organe = convertField(data.type_organe, "string");
+      const date_mes = convertField(data.date_mes, "date");
+      const marque = convertField(data.marque, "string");
+      const sn = convertField(data.sn, "string");
+      const origine: OrigineOrgane =
+        convertField(data.origine, "string") || null;
+      const circuit = convertField(data.circuit, "string");
+      const hrm_initial = convertField(data.hrm_initial, "number") || 0;
+      const obs = convertField(data.obs, "string");
+
+      const requiredFields = {
+        name: name,
+        type_organe: type_organe,
+      };
+
+      for (const [field, value] of Object.entries(requiredFields)) {
+        if (!value || value.trim() === "") {
+          return [
+            {
+              success: false,
+              data: data,
+              message: `Erreur: Le champ '${field}' est requis`,
+            },
+          ];
+        }
+      }
+      // console.log(`typeof origine:`, typeof origine, origine);
+
+      // if (
+      //   !origine ||
+      //   !Object.values(OrigineOrgane).includes(origine as OrigineOrgane)
+      // ) {
+      //   return [
+      //     {
+      //       success: false,
+      //       data: data,
+      //       message: `Erreur: Le champ 'origine' est requis et doit être une valeur valide (BRC, APPRO, AUTRE)`,
+      //     },
+      //   ];
+      // }
+
+      const typeOrgane = await prisma.typeOrgane.findUnique({
+        where: { name: type_organe },
+      });
+
+      if (!typeOrgane) {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `TypeOrgane "${type_organe}" non trouvé`,
+          },
+        ];
+      }
+
+      const newData = {
+        name,
+        typeOrganeId: typeOrgane.id,
+        date_mes,
+        marque,
+        sn,
+        origine,
+        circuit,
+        hrm_initial,
+        obs,
+      };
+
+      const organe = await prisma.organe.upsert({
+        where: {
+          name_typeOrganeId: { name: name, typeOrganeId: typeOrgane.id },
+        },
+        update: newData,
+        create: newData,
+      });
+
+      return [
+        {
+          success: true,
+          data: organe,
+          message: `Organe ${name} importé avec succès`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
+  async importTypeOrganes(data: any) {
+    try {
+      const name = convertField(data.name, "string");
+      const parcsString = convertField(data.parcs, "string").trim(); // PARCs séparés par des virgules;
+      if (!name || name.trim() === "") {
+        return [
+          {
+            success: false,
+            data: data,
+            message: `Erreur: Le champ 'name' est requis`,
+          },
+        ];
+      }
+
+      let parcsConnect: { id: string }[] = [];
+
+      if (parcsString && parcsString.trim() !== "") {
+        const parcsArray = parcsString
+          .split(",")
+          .map((name: string) => name.trim());
+
+        // Vérifier l'existence des parcs PAR LEUR NOM
+        const existingParcs = await prisma.parc.findMany({
+          where: { name: { in: parcsArray } },
+          select: { id: true, name: true },
+        });
+
+        // Créer un tableau des noms trouvés
+        const foundNames = existingParcs.map((p) => p.name);
+
+        // Trouver les noms manquants
+        const missingNames = parcsArray.filter(
+          (name: string) => !foundNames.includes(name)
+        );
+
+        // Si des parcs n'existent pas, retourner une erreur
+        if (missingNames.length > 0) {
+          return [
+            {
+              success: false,
+              data: data,
+              message: `Erreur: Les parcs suivants n'existent pas : ${missingNames.join(
+                ", "
+              )}`,
+            },
+          ];
+        }
+
+        // Préparer le tableau de connexion avec les IDs
+        parcsConnect = existingParcs.map((p) => ({ id: p.id }));
+      }
+
+      // Utilisation de upsert avec gestion des relations
+      const typeOrgane = await prisma.typeOrgane.upsert({
+        where: { name: name },
+        update: {
+          name: name,
+          parcs: {
+            set: parcsConnect, // Remplace toutes les relations existantes
+          },
+        },
+        create: {
+          name: name,
+          parcs: {
+            connect: parcsConnect,
+          },
+        },
+        include: {
+          parcs: true,
+        },
+      });
+
+      return [
+        {
+          success: true,
+          data: typeOrgane,
+          message: `typeOrgane ${name} ajouté/modifié avec succès.`,
+        },
+      ];
+    } catch (error: any) {
+      return [
+        {
+          success: false,
+          data: data,
+          message: `Erreur: ${error.message}`,
+        },
+      ];
+    }
+  }
+
+  // SAISIE HIMS & HRM
   async importSaisieHims(data: any) {
     try {
       // console.log("##### ", data.enginName);
@@ -332,6 +655,7 @@ export class ImportService {
     }
   }
 
+  // DONNEES DE BASE
   async importSites(data: any) {
     try {
       const name = convertField(data.name, "string");
@@ -743,6 +1067,7 @@ export class ImportService {
     }
   }
 
+  // GESTION DES USERS & ROLES
   async importUsers(data: any) {
     try {
       const name = convertField(data.name, "string");
@@ -969,6 +1294,7 @@ export class ImportService {
     }
   }
 
+  // GESTION DES ANOMALIES
   async importAnomalies(data: any) {
     try {
       const numeroBacklog = convertField(data.numeroBacklog, "string");
@@ -1175,4 +1501,49 @@ export class ImportService {
       ];
     }
   }
+}
+
+// LES ENUMS UTILISÉS DANS L'IMPORT DES ANOMALIES
+enum SourceAnomalie {
+  VS = "VS",
+  VJ = "VJ",
+  INSPECTION = "INSPECTION",
+  AUTRE = "AUTRE",
+}
+// VS;VJ;INSPECTION;AUTRE
+
+enum Priorite {
+  ELEVEE = "ELEVEE",
+  MOYENNE = "MOYENNE",
+  FAIBLE = "FAIBLE",
+}
+
+enum StatutAnomalie {
+  ATTENTE_PDR = "ATTENTE_PDR",
+  PDR_PRET = "PDR_PRET",
+  NON_PROGRAMMEE = "NON_PROGRAMMEE",
+  PROGRAMMEE = "PROGRAMMEE",
+  EXECUTE = "EXECUTE",
+}
+
+enum OrigineOrgane {
+  BRC = "BRC",
+  APPRO = "APPRO",
+  AUTRE = "AUTRE",
+}
+
+enum TypeMouvementOrgane {
+  POSE = "POSE",
+  DEPOSE = "DEPOSE",
+}
+
+enum TypeCauseMouvementOrgane {
+  PREVENTIF = "PREVENTIF",
+  INCIDENT = "INCIDENT",
+}
+
+enum TypeRevisionOrgane {
+  VP = "VP",
+  RG = "RG",
+  INTERVENTION = "INTERVENTION",
 }

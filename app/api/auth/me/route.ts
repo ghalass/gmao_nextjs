@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
+import { getSession, logout } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -48,6 +48,7 @@ export async function GET() {
     });
 
     if (!user) {
+      await logout();
       return NextResponse.json({ user: null }, { status: 404 });
     }
 

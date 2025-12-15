@@ -24,6 +24,10 @@ import {
   NotepadText,
   BookOpenCheck,
   Boxes,
+  Move,
+  Hourglass,
+  FileClock,
+  ClockCheck,
 } from "lucide-react";
 
 import {
@@ -179,6 +183,18 @@ const gestionOrganesItems = {
       url: "/organes",
       icon: FormInputIcon,
       description: "Gestion des organes",
+    },
+    {
+      title: "Mouvements",
+      url: "/organes/rapports/mvt-organe",
+      icon: Move,
+      description: "Rapport mensuel des mouvements des organes",
+    },
+    {
+      title: "HRM",
+      url: "/organes/rapports/heure-marche",
+      icon: ClockCheck,
+      description: "Rapport mensuel des heures de marche des organes",
     },
   ],
 };
