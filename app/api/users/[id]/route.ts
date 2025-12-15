@@ -10,7 +10,7 @@ import {
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
 import { useAuth } from "@/hooks/useAuth";
-import { getSession } from "@/lib/auth";
+import { getSession, hashPassword } from "@/lib/auth";
 import { isAdmin, isSuperAdmin } from "@/lib/rbac/core";
 
 const the_resource = "user";
@@ -85,7 +85,6 @@ export async function PATCH(
     }
 
     const { email, name, password, roles, active } = body;
-    console.log(body);
 
     // Vérifier si l'utilisateur existe
     const existingUser = await prisma.user.findUnique({
@@ -145,15 +144,17 @@ export async function PATCH(
       updateData.active = Boolean(active);
     }
 
-    // Hasher le nouveau mot de passe si fourni
-    if (password && password.trim() !== "") {
+    // Hasher le nouveau mot de passe si fourni et non vide
+    if (password !== undefined && password.trim() !== "") {
       if (password.length < 6) {
         return NextResponse.json(
           { message: "Le mot de passe doit contenir au moins 6 caractères" },
           { status: 400 }
         );
       }
-      updateData.password = await bcrypt.hash(password, 10);
+
+      const hashedPassword = await hashPassword(password);
+      updateData.password = hashedPassword;
     }
 
     // Gestion des rôles
@@ -225,8 +226,6 @@ export async function PATCH(
       }
     }
 
-    console.log("Données de mise à jour:", updateData);
-
     // Mettre à jour l'utilisateur
     const user = await prisma.user.update({
       where: { id },
@@ -269,7 +268,6 @@ export async function PATCH(
     );
   }
 }
-
 // DELETE - Supprimer un utilisateur
 export async function DELETE(
   request: NextRequest,

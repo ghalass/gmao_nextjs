@@ -75,9 +75,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    console.log("####################");
-    console.log(body);
-
     const { email, name, password } = body;
 
     // Vérifier si l'email existe déjà
@@ -93,7 +90,6 @@ export async function POST(request: Request) {
     }
 
     // Hasher le mot de passe
-    // const hashedPassword = await bcrypt.hash(password, 10);
     const hashedPassword = await hashPassword(password);
 
     const { role } = body;
@@ -103,7 +99,7 @@ export async function POST(request: Request) {
         email,
         name,
         password: hashedPassword,
-        active: true,
+        active: false,
         // Assigner le rôle (utiliser l'ID directement)
         roles: {
           connect: [{ id: role[0] }],

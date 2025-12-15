@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: {
         email,
-        active: true, // Seulement les utilisateurs actifs peuvent se connecter
       },
       include: {
         // Relation directe User -> Role[]
@@ -75,6 +74,16 @@ export async function POST(req: NextRequest) {
     if (!isValid) {
       return NextResponse.json(
         { message: "Email ou mot de passe incorrect!" },
+        { status: 401 }
+      );
+    }
+
+    if (!user.active) {
+      return NextResponse.json(
+        {
+          message:
+            "Votre compte n'est pas encore activé, veuillez contacter un admin pour l'activation.",
+        },
         { status: 401 }
       );
     }
