@@ -9,11 +9,11 @@ export async function GET() {
     const session = await getSession();
 
     if (!session.isLoggedIn) {
-      return NextResponse.json({ user: null });
+      return NextResponse.json(null, { status: 401 });
     }
 
     if (!session.userId) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json(null, { status: 401 });
     }
 
     // Recherche de l'utilisateur avec ses rôles selon le schéma
@@ -49,7 +49,7 @@ export async function GET() {
 
     if (!user) {
       await logout();
-      return NextResponse.json({ user: null }, { status: 404 });
+      return NextResponse.json(null, { status: 404 });
     }
 
     // Extraire les permissions de tous les rôles
