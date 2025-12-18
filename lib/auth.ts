@@ -34,7 +34,9 @@ export const sessionOptions = {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
     sameSite: "lax" as const, // 'lax' | 'strict' | 'none'
-    maxAge: process.env.SESSION_MAX_AGE || 1 * 60 * 60, // 1 heure en secondes
+    maxAge: process.env.SESSION_MAX_AGE
+      ? parseInt(process.env.SESSION_MAX_AGE, 10)
+      : 24 * 60 * 60, // 24 heure en secondes
   },
 };
 
