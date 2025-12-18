@@ -21,9 +21,16 @@ import {
   Users,
   Settings,
   BarChart,
+  Home,
+  Video,
+  Clock,
+  ChevronRight,
+  PlayCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return (
@@ -38,6 +45,126 @@ export default function HomePage() {
             Application de gestion de maintenance assistée par ordinateur pour
             l&apos;optimisation des équipements industriels
           </p>
+
+          <div className="mt-6 md:mt-8 max-w-md mx-auto">
+            <Link href={"/videos"} className="block">
+              <Button
+                variant="default"
+                size="lg"
+                className="
+          w-full 
+          h-auto 
+          py-5 
+          px-6 
+          flex 
+          flex-col 
+          items-center 
+          justify-center 
+          gap-3 
+          bg-linear-to-r 
+          from-purple-600 
+          to-indigo-600 
+          hover:from-purple-700 
+          hover:to-indigo-700 
+          text-white 
+          shadow-lg 
+          hover:shadow-xl 
+          transition-all 
+          duration-300 
+          rounded-xl 
+          group
+        "
+              >
+                {/* Icône principale */}
+                <div
+                  className="
+          p-3 
+          bg-white/20 
+          rounded-full 
+          group-hover:bg-white/30 
+          transition-colors
+        "
+                >
+                  <Video className="w-8 h-8" />
+                </div>
+
+                {/* Contenu textuel */}
+                <div className="space-y-1">
+                  <p
+                    className="
+            font-semibold 
+            text-lg 
+            md:text-xl 
+            tracking-tight
+          "
+                  >
+                    Tutoriels vidéo complets
+                  </p>
+                  <p
+                    className="
+            text-sm 
+            md:text-base 
+            text-white/90 
+            font-medium
+          "
+                  >
+                    Découvrez comment utiliser cette application
+                  </p>
+                </div>
+
+                {/* Badge avec compteur */}
+                <div
+                  className="
+          flex 
+          items-center 
+          gap-2 
+          mt-2
+        "
+                >
+                  <Badge
+                    variant="secondary"
+                    className="
+              bg-white/20 
+              hover:bg-white/30 
+              text-white 
+              border-0 
+              font-medium
+            "
+                  >
+                    <PlayCircle className="w-4 h-4 mr-1" />
+                    12 tutoriels
+                  </Badge>
+                  <ChevronRight
+                    className="
+            w-5 h-5 
+            opacity-0 
+            -translate-x-2 
+            group-hover:opacity-100 
+            group-hover:translate-x-0 
+            transition-all 
+            duration-300
+          "
+                  />
+                </div>
+              </Button>
+            </Link>
+
+            {/* Sous-texte informatif */}
+            <p
+              className="
+      text-xs 
+      text-muted-foreground 
+      mt-3 
+      flex 
+      items-center 
+      justify-center 
+      gap-1
+    "
+            >
+              <Clock className="w-3 h-3" />
+              Environ 45 minutes de contenu • Guide étape par étape
+            </p>
+          </div>
         </div>
 
         {/* Grille principale */}
