@@ -117,10 +117,16 @@ const saisieItems = {
       description: "Gérer les saisies des engins",
     },
     {
-      title: "Saisies",
-      url: "/saisies/all",
+      title: "Saisies hrm",
+      url: "/saisies/all_hrm",
       icon: Keyboard,
-      description: "Afficher les saisies des engins",
+      description: "Tout les saisies hrm",
+    },
+    {
+      title: "Saisies him",
+      url: "/saisies/all_him",
+      icon: Keyboard,
+      description: "Tout les saisies him",
     },
   ],
 };

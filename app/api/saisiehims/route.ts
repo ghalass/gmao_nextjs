@@ -17,87 +17,94 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const dateDebut = searchParams.get("dateDebut");
-    const dateFin = searchParams.get("dateFin");
-    const engin = searchParams.get("engin");
-    const site = searchParams.get("site");
-    const origineSaisie = searchParams.get("origineSaisie");
+
+    // Pagination
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const skip = (page - 1) * limit;
+
+    // Filtres
+    const search = searchParams.get("search") || "";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortOrder = searchParams.get("sortOrder") || "desc";
 
     const where: any = {};
 
-    if (dateDebut && dateFin) {
-      where.saisiehrm = {
-        du: {
-          gte: new Date(dateDebut),
-          lte: new Date(dateFin),
-        },
-      };
-    } else if (dateDebut) {
-      where.saisiehrm = {
-        du: {
-          gte: new Date(dateDebut),
-        },
-      };
-    } else if (dateFin) {
-      where.saisiehrm = {
-        du: {
-          lte: new Date(dateFin),
-        },
-      };
+    // Filtre de recherche
+    if (search) {
+      where.OR = [
+        { engin: { name: { contains: search, mode: "insensitive" } } },
+        { site: { name: { contains: search, mode: "insensitive" } } },
+        { panne: { name: { contains: search, mode: "insensitive" } } },
+        { obs: { contains: search, mode: "insensitive" } },
+      ];
     }
 
-    if (engin) {
-      where.OR = [{ enginId: engin }, { saisiehrm: { enginId: engin } }];
+    // Tri
+    const orderBy: any = {};
+    if (sortBy === "createdAt") {
+      orderBy.createdAt = sortOrder;
+    } else if (sortBy === "him") {
+      orderBy.him = sortOrder;
+    } else if (sortBy === "engin") {
+      orderBy.engin = { name: sortOrder };
+    } else if (sortBy === "site") {
+      orderBy.engin = { site: { name: sortOrder } };
     }
 
-    if (site) {
-      where.OR = [{ saisiehrm: { siteId: site } }];
-    }
-
-    if (origineSaisie) {
-      where.origineSaisieId = origineSaisie;
-    }
-
-    const saisiehims = await prisma.saisiehim.findMany({
-      where,
-      include: {
-        panne: true,
-        saisiehrm: {
-          include: {
-            engin: {
-              include: {
-                parc: {
-                  include: {
-                    typeparc: true,
+    const [saisiehims, total] = await Promise.all([
+      prisma.saisiehim.findMany({
+        where,
+        include: {
+          panne: {
+            include: {
+              typepanne: true,
+            },
+          },
+          saisiehrm: {
+            include: {
+              engin: {
+                include: {
+                  site: true,
+                  parc: {
+                    include: {
+                      typeparc: true,
+                    },
                   },
                 },
               },
             },
-            site: true,
           },
-        },
-        engin: {
-          include: {
-            parc: {
-              include: {
-                typeparc: true,
+          engin: {
+            include: {
+              site: true,
+              parc: {
+                include: {
+                  typeparc: true,
+                },
               },
             },
           },
-        },
-        saisielubrifiant: {
-          include: {
-            lubrifiant: true,
-            typeconsommationlub: true,
+          saisielubrifiant: {
+            include: {
+              lubrifiant: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.saisiehim.count({ where }),
+    ]);
 
-    return NextResponse.json(saisiehims);
+    return NextResponse.json({
+      data: saisiehims,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("Erreur lors de la récupération des saisies HIM:", error);
     return NextResponse.json(

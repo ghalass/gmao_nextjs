@@ -6,17 +6,32 @@ import { Saisiehrm, SaisiehrmFormData } from "@/lib/types/saisie";
 export const useSaisiehrm = () => {
   const queryClient = useQueryClient();
 
-  const saisiehrmQuery = useQuery<Saisiehrm[]>({
-    queryKey: ["saisiehrm"],
-    queryFn: async (): Promise<Saisiehrm[]> => {
-      const response = await fetch(`${API}/saisiehrm`);
-      const dataRes = await response.json();
-      if (!response.ok) {
-        throw new Error(dataRes.message || "Erreur lors du chargement");
-      }
-      return dataRes;
-    },
-  });
+  // const saisiehrmQuery = useQuery<Saisiehrm[]>({
+  //   queryKey: ["saisiehrm"],
+  //   queryFn: async (): Promise<Saisiehrm[]> => {
+  //     const response = await fetch(`${API}/saisiehrm`);
+  //     const dataRes = await response.json();
+  //     if (!response.ok) {
+  //       throw new Error(dataRes.message || "Erreur lors du chargement");
+  //     }
+  //     return dataRes;
+  //   },
+  // });
+
+  const saisiehrmByDateQuery = (date?: string) => {
+    return useQuery<Saisiehrm[]>({
+      queryKey: ["saisiehrm"],
+      queryFn: async (): Promise<Saisiehrm[]> => {
+        const response = await fetch(`${API}/saisiehrm/by-date/${date}`);
+        const dataRes = await response.json();
+        if (!response.ok) {
+          throw new Error(dataRes.message || "Erreur lors du chargement");
+        }
+        return dataRes;
+      },
+      enabled: !!date,
+    });
+  };
 
   const createSaisiehrm = useMutation<Saisiehrm, Error, SaisiehrmFormData>({
     mutationFn: async (data: SaisiehrmFormData): Promise<Saisiehrm> => {
@@ -55,8 +70,9 @@ export const useSaisiehrm = () => {
   });
 
   return {
-    saisiehrmQuery,
+    // saisiehrmQuery,
     createSaisiehrm,
     deleteSaisiehrm,
+    saisiehrmByDateQuery,
   };
 };

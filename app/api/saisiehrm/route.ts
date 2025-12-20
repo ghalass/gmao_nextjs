@@ -5,49 +5,50 @@ import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 
 const the_resource = "saisiehrm";
 
-export async function GET(request: NextRequest) {
-  try {
-    const protectionError = await protectReadRoute(request, the_resource);
-    if (protectionError) return protectionError;
+// export async function GET(request: NextRequest) {
+//   try {
+//     const protectionError = await protectReadRoute(request, the_resource);
+//     if (protectionError) return protectionError;
+//     console.log("get saisie_hrm");
 
-    const saisiehrm = await prisma.saisiehrm.findMany({
-      include: {
-        engin: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        site: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        saisiehim: {
-          include: {
-            panne: {
-              include: {
-                typepanne: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        du: "desc",
-      },
-    });
+//     const saisiehrm = await prisma.saisiehrm.findMany({
+//       include: {
+//         engin: {
+//           select: {
+//             id: true,
+//             name: true,
+//           },
+//         },
+//         site: {
+//           select: {
+//             id: true,
+//             name: true,
+//           },
+//         },
+//         saisiehim: {
+//           include: {
+//             panne: {
+//               include: {
+//                 typepanne: true,
+//               },
+//             },
+//           },
+//         },
+//       },
+//       orderBy: {
+//         du: "desc",
+//       },
+//     });
 
-    return NextResponse.json(saisiehrm);
-  } catch (error) {
-    console.error("Error fetching saisiehrm:", error);
-    return NextResponse.json(
-      { message: "Erreur lors de la récupération des saisies HRM" },
-      { status: 500 }
-    );
-  }
-}
+//     return NextResponse.json(saisiehrm);
+//   } catch (error) {
+//     console.error("Error fetching saisiehrm:", error);
+//     return NextResponse.json(
+//       { message: "Erreur lors de la récupération des saisies HRM" },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 export async function POST(request: NextRequest) {
   try {
