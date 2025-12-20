@@ -75,11 +75,6 @@ export function DeleteTypepanneModal({
             <p>
               <strong>Nom :</strong> {typepanne?.name}
             </p>
-            {typepanne?.description && (
-              <p>
-                <strong>Description :</strong> {typepanne.description}
-              </p>
-            )}
             <p className="text-destructive font-medium">
               <strong>Pannes associées :</strong>{" "}
               {typepanne?._count?.pannes || 0}

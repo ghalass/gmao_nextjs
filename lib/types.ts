@@ -213,6 +213,7 @@ export interface TypepanneParc {
 export interface Panne {
   id: string;
   name: string;
+  description?: string;
   typepanneId: string;
 
   typepanne?: Typepanne;

@@ -66,6 +66,27 @@ export const useEngins = () => {
         }
         return dataRes;
       },
+      enabled: !!filters, // Activer seulement si des filtres sont fournis
+    });
+  };
+
+  // Nouvelle fonction pour récupérer les engins d'un parc spécifique
+  const useEnginsByParc = (parcId?: string) => {
+    return useQuery<Engin[]>({
+      queryKey: ["engins", "by-parc", parcId],
+      queryFn: async (): Promise<Engin[]> => {
+        if (!parcId) return [];
+
+        const response = await fetch(
+          `${API}/engins?parcId=${parcId}&active=true`
+        );
+        const dataRes = await response.json();
+        if (!response.ok) {
+          throw new Error(dataRes.message || "Erreur lors du chargement");
+        }
+        return dataRes;
+      },
+      enabled: !!parcId,
     });
   };
 
@@ -144,7 +165,8 @@ export const useEngins = () => {
 
   return {
     enginsQuery,
-    useFilteredEngins, // Nouvelle fonction exportée
+    useFilteredEngins,
+    useEnginsByParc, // Nouvelle fonction exportée
     createEngin,
     updateEngin,
     deleteEngin,

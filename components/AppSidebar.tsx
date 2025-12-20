@@ -28,6 +28,8 @@ import {
   Hourglass,
   FileClock,
   ClockCheck,
+  Keyboard,
+  KeyboardMusic,
 } from "lucide-react";
 
 import {
@@ -114,6 +116,12 @@ const saisieItems = {
       icon: Truck,
       description: "Gérer les saisies des engins",
     },
+    {
+      title: "Saisies",
+      url: "/saisies/all",
+      icon: Keyboard,
+      description: "Afficher les saisies des engins",
+    },
   ],
 };
 
@@ -132,6 +140,12 @@ const backlogItems = {
       url: "/anomalies",
       icon: Wrench,
       description: "Gestion des anomalies",
+    },
+    {
+      title: "Saisie",
+      url: "/anomalies/saisie",
+      icon: KeyboardMusic,
+      description: "Saisie des anomalies",
     },
   ],
 };
@@ -170,6 +184,12 @@ const rapportsItems = {
       url: "/rapports/etat-general",
       icon: Boxes,
       description: "etat-general",
+    },
+    {
+      title: "Paretos",
+      url: "/rapports/pareto",
+      icon: Boxes,
+      description: "Paretos",
     },
   ],
 };

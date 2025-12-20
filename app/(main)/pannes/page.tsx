@@ -419,7 +419,7 @@ export default function PannesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-xs truncate">
-                    {panne.typepanne?.description || "Aucune description"}
+                    {panne?.description || "Aucune description"}
                   </TableCell>
 
                   <TableCell className="text-right">

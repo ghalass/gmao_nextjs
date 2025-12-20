@@ -164,23 +164,14 @@ export default function TypepannesPage() {
       // Filtre global
       const globalMatch =
         globalSearch === "" ||
-        typepanne.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        (typepanne.description &&
-          typepanne.description
-            .toLowerCase()
-            .includes(globalSearch.toLowerCase()));
+        typepanne.name.toLowerCase().includes(globalSearch.toLowerCase());
 
       // Filtres par colonne
       const nameMatch =
         columnFilters.name === "" ||
         typepanne.name.toLowerCase().includes(columnFilters.name.toLowerCase());
 
-      const descriptionMatch =
-        columnFilters.description === "" ||
-        (typepanne.description &&
-          typepanne.description
-            .toLowerCase()
-            .includes(columnFilters.description.toLowerCase()));
+      const descriptionMatch = columnFilters.description === "";
 
       return Boolean(globalMatch && nameMatch && descriptionMatch);
     });
@@ -464,31 +455,6 @@ export default function TypepannesPage() {
                 </div>
               </SortableHeader>
 
-              <TableHead>
-                <div className="space-y-2">
-                  <div className="font-medium">Description</div>
-                  <Input
-                    ref={(el: HTMLInputElement | null) => {
-                      columnFilterRefs.current.description = el;
-                    }}
-                    placeholder="Filtrer..."
-                    value={columnFilters.description}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleColumnFilter("description", e.target.value)
-                    }
-                    className="h-7 text-xs"
-                    onClick={(e: React.MouseEvent<HTMLInputElement>) =>
-                      e.stopPropagation()
-                    }
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                </div>
-              </TableHead>
-
               <SortableHeader field="pannesCount">
                 <span className="font-medium">Pannes</span>
               </SortableHeader>
@@ -542,15 +508,7 @@ export default function TypepannesPage() {
                       <span>{typepanne.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div className="text-sm text-muted-foreground truncate">
-                      {typepanne.description || (
-                        <span className="italic text-muted-foreground/60">
-                          Aucune description
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
+
                   <TableCell>
                     <Badge
                       variant={typepanne._count?.pannes ? "default" : "outline"}

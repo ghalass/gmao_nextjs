@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export interface Typepanne {
   id: string;
   name: string;
-  description?: string;
   createdAt: string;
   updatedAt: string;
   _count?: {

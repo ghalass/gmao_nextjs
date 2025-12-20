@@ -19,7 +19,7 @@ export interface TypeparcFormData {
 export function useTypeparcs() {
   const queryClient = useQueryClient();
 
-  const typeparcsQuery = useQuery({
+  const typeparcsQuery = useQuery<Typeparc[]>({
     queryKey: ["typeparcs"],
     queryFn: async (): Promise<Typeparc[]> => {
       const response = await fetch(`${API}/typeparcs`);
@@ -59,7 +59,7 @@ export function useTypeparcs() {
       id: string;
       data: TypeparcFormData;
     }): Promise<Typeparc> => {
-      const response = await fetch(`/api/typeparcs/${id}`, {
+      const response = await fetch(`${API}/typeparcs/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export function useTypeparcs() {
 
   const deleteTypeparc = useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const response = await fetch(`/api/typeparcs/${id}`, {
+      const response = await fetch(`${API}/typeparcs/${id}`, {
         method: "DELETE",
       });
       const dataRes = await response.json();

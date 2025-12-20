@@ -81,7 +81,6 @@ export function TypepanneModal({
       if (typepanne) {
         formik.setValues({
           name: typepanne.name,
-          description: typepanne.description || "",
         });
       } else {
         formik.resetForm();

@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Typeparc } from "@/lib/types";
 import { ParcFormData } from "@/lib/validations/parcSchema";
+import { API } from "@/lib/constantes";
 
 export interface Parc {
   id: string;
@@ -18,10 +19,10 @@ export interface Parc {
 export function useParcs() {
   const queryClient = useQueryClient();
 
-  const parcsQuery = useQuery({
+  const parcsQuery = useQuery<Parc[]>({
     queryKey: ["parcs"],
     queryFn: async (): Promise<Parc[]> => {
-      const response = await fetch("/api/parcs");
+      const response = await fetch(`${API}/parcs`);
       const dataRes = await response.json();
       if (!response.ok) {
         throw new Error(dataRes.message || "Erreur lors du chargement");
@@ -30,21 +31,27 @@ export function useParcs() {
     },
   });
 
-  const parcsByTypeparcQuery = useQuery({
-    queryKey: ["parcs"],
-    queryFn: async (): Promise<Parc[]> => {
-      const response = await fetch("/api/parcs");
-      const dataRes = await response.json();
-      if (!response.ok) {
-        throw new Error(dataRes.message || "Erreur lors du chargement");
-      }
-      return dataRes;
-    },
-  });
+  // Nouvelle fonction pour récupérer les parcs par typeparc
+  const useParcsByTypeparc = (typeparcId?: string) => {
+    return useQuery<Parc[]>({
+      queryKey: ["parcs", "by-typeparc", typeparcId],
+      queryFn: async (): Promise<Parc[]> => {
+        if (!typeparcId) return [];
+
+        const response = await fetch(`${API}/parcs?typeparcId=${typeparcId}`);
+        const dataRes = await response.json();
+        if (!response.ok) {
+          throw new Error(dataRes.message || "Erreur lors du chargement");
+        }
+        return dataRes;
+      },
+      enabled: !!typeparcId,
+    });
+  };
 
   const createParc = useMutation({
     mutationFn: async (data: ParcFormData): Promise<Parc> => {
-      const response = await fetch("/api/parcs", {
+      const response = await fetch(`${API}/parcs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,7 +77,7 @@ export function useParcs() {
       id: string;
       data: ParcFormData;
     }): Promise<Parc> => {
-      const response = await fetch(`/api/parcs/${id}`, {
+      const response = await fetch(`${API}/parcs/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -90,7 +97,7 @@ export function useParcs() {
 
   const deleteParc = useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const response = await fetch(`/api/parcs/${id}`, {
+      const response = await fetch(`${API}/parcs/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) {
@@ -105,7 +112,7 @@ export function useParcs() {
 
   return {
     parcsQuery,
-    parcsByTypeparcQuery,
+    useParcsByTypeparc, // Renommé pour plus de clarté
     createParc,
     updateParc,
     deleteParc,
