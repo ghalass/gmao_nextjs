@@ -32,6 +32,7 @@ import {
   KeyboardMusic,
   Droplet,
   Droplets,
+  DropletsIcon,
 } from "lucide-react";
 
 import {
@@ -103,18 +104,6 @@ const configItems = {
       url: "/typepannes",
       icon: ListOrdered,
       description: "Gérer les type des pannes",
-    },
-    {
-      title: "lubrifiant",
-      url: "/lubrifiant",
-      icon: Droplet,
-      description: "Gérer les lubrifiants",
-    },
-    {
-      title: "Type de lubrifiant",
-      url: "/type_lubrifiant",
-      icon: Droplets,
-      description: "Gérer les type des lubrifiants",
     },
   ],
 };
@@ -271,11 +260,44 @@ const adminItems = {
   ],
 };
 
+const gestionLubrifiantItems = {
+  title: "Lubrifiants",
+  icon: Droplets,
+
+  list: [
+    {
+      title: "Spécifique Lubrifiant",
+      url: "/rapports/spec_lubrifiant",
+      icon: DropletsIcon,
+      description: "Spécifique Lubrifiant",
+    },
+    {
+      title: "Saisies lub",
+      url: "/saisies/all_saisies_lubrifiant",
+      icon: Keyboard,
+      description: "Tout les saisies lubrifiant",
+    },
+    {
+      title: "lubrifiant",
+      url: "/lubrifiant",
+      icon: Droplet,
+      description: "Gérer les lubrifiants",
+    },
+    {
+      title: "Type de lubrifiant",
+      url: "/type_lubrifiant",
+      icon: Droplets,
+      description: "Gérer les type des lubrifiants",
+    },
+  ],
+};
+
 const allItems = [
   saisieItems,
   rapportsItems,
   backlogItems,
   gestionOrganesItems,
+  gestionLubrifiantItems,
   configItems,
   adminItems,
 ];
