@@ -30,6 +30,8 @@ import {
   ClockCheck,
   Keyboard,
   KeyboardMusic,
+  Droplet,
+  Droplets,
 } from "lucide-react";
 
 import {
@@ -101,6 +103,18 @@ const configItems = {
       url: "/typepannes",
       icon: ListOrdered,
       description: "Gérer les type des pannes",
+    },
+    {
+      title: "lubrifiant",
+      url: "/lubrifiant",
+      icon: Droplet,
+      description: "Gérer les lubrifiants",
+    },
+    {
+      title: "Type de lubrifiant",
+      url: "/type_lubrifiant",
+      icon: Droplets,
+      description: "Gérer les type des lubrifiants",
     },
   ],
 };
