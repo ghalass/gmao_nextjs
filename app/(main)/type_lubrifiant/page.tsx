@@ -44,7 +44,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { type TypelubrifiantFormData } from "@/lib/validations/type_lubrifiantSchema";
 import { exportExcel } from "@/lib/xlsxFn";
 
-type SortField = "name" | "createdAt" | "lubrifiantsCount";
+type SortField = "name" | "lubrifiantsCount";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -174,10 +174,6 @@ export default function TypeLubrifiantPage() {
         case "name":
           aValue = a.name.toLowerCase();
           bValue = b.name.toLowerCase();
-          break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
           break;
         case "lubrifiantsCount":
           aValue = a._count?.lubrifiants || 0;
@@ -377,28 +373,13 @@ export default function TypeLubrifiantPage() {
                     ))}
                 </Button>
               </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort("createdAt")}
-                  className="h-auto p-0 font-semibold"
-                >
-                  Créé le
-                  {sortField === "createdAt" &&
-                    (sortDirection === "asc" ? (
-                      <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    ))}
-                </Button>
-              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={3} className="text-center py-8">
                   {hasActiveFilters
                     ? "Aucun résultat trouvé"
                     : "Aucun type de lubrifiant trouvé"}
@@ -420,11 +401,6 @@ export default function TypeLubrifiantPage() {
                     >
                       {typeLubrifiant._count?.lubrifiants || 0}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(typeLubrifiant.createdAt).toLocaleDateString(
-                      "fr-FR"
-                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

@@ -46,7 +46,25 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(lubrifiant);
+    // Récupérer les parcs associés
+    const lubrifiantParcs = await prisma.lubrifiantParc.findMany({
+      where: { lubrifiantId: id },
+      include: {
+        parc: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const lubrifiantWithParcs = {
+      ...lubrifiant,
+      parcs: lubrifiantParcs.map((lp) => lp.parc),
+    };
+
+    return NextResponse.json(lubrifiantWithParcs);
   } catch (error) {
     console.error("Error fetching lubrifiant:", error);
     return NextResponse.json(
@@ -74,7 +92,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, typelubrifiantId } = body;
+    const { name, typelubrifiantId, parcIds } = body;
 
     // Validation des données
     if (name && typeof name !== "string") {
@@ -87,6 +105,13 @@ export async function PUT(
     if (typelubrifiantId && typeof typelubrifiantId !== "string") {
       return NextResponse.json(
         { message: "Le type de lubrifiant doit être une chaîne de caractères" },
+        { status: 400 }
+      );
+    }
+
+    if (parcIds && (!Array.isArray(parcIds) || parcIds.length === 0)) {
+      return NextResponse.json(
+        { message: "Au moins un parc doit être sélectionné" },
         { status: 400 }
       );
     }
@@ -116,18 +141,73 @@ export async function PUT(
       }
     }
 
-    const lubrifiant = await prisma.lubrifiant.update({
-      where: { id },
-      data: {
-        ...(name !== undefined && { name: name.trim() }),
-        ...(typelubrifiantId !== undefined && { typelubrifiantId }),
-      },
+    // Si parcIds est fourni, vérifier que tous les parcs existent
+    if (parcIds) {
+      const parcs = await prisma.parc.findMany({
+        where: { id: { in: parcIds } },
+      });
+
+      if (parcs.length !== parcIds.length) {
+        return NextResponse.json(
+          { message: "Un ou plusieurs parcs spécifiés n'existent pas" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Mettre à jour le lubrifiant et ses associations avec les parcs
+    const result = await prisma.$transaction(async (tx) => {
+      const lubrifiant = await tx.lubrifiant.update({
+        where: { id },
+        data: {
+          ...(name !== undefined && { name: name.trim() }),
+          ...(typelubrifiantId !== undefined && { typelubrifiantId }),
+        },
+        include: {
+          typelubrifiant: true,
+        },
+      });
+
+      // Si parcIds est fourni, mettre à jour les associations
+      if (parcIds !== undefined) {
+        // Supprimer toutes les associations existantes
+        await tx.lubrifiantParc.deleteMany({
+          where: { lubrifiantId: id },
+        });
+
+        // Créer les nouvelles associations
+        const lubrifiantParcs = parcIds.map((parcId: string) => ({
+          parcId,
+          lubrifiantId: lubrifiant.id,
+        }));
+
+        await tx.lubrifiantParc.createMany({
+          data: lubrifiantParcs,
+        });
+      }
+
+      return lubrifiant;
+    });
+
+    // Récupérer les parcs associés pour la réponse
+    const lubrifiantParcs = await prisma.lubrifiantParc.findMany({
+      where: { lubrifiantId: result.id },
       include: {
-        typelubrifiant: true,
+        parc: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(lubrifiant);
+    const resultWithParcs = {
+      ...result,
+      parcs: lubrifiantParcs.map((lp) => lp.parc),
+    };
+
+    return NextResponse.json(resultWithParcs);
   } catch (error) {
     console.error("Error updating lubrifiant:", error);
 

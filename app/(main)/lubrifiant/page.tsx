@@ -42,7 +42,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { type LubrifiantFormData } from "@/lib/validations/lubrifiantSchema";
 import { exportExcel } from "@/lib/xlsxFn";
 
-type SortField = "name" | "createdAt" | "typelubrifiant" | "usagesCount";
+type SortField = "name" | "typelubrifiant" | "parcsCount";
 type SortDirection = "asc" | "desc";
 
 interface ColumnFilters {
@@ -119,13 +119,25 @@ export default function LubrifiantPage() {
   const handleSubmit = async (data: LubrifiantFormData): Promise<void> => {
     try {
       setError(null);
+      // Nettoyer les parcIds pour s'assurer qu'il n'y a que des strings
+      const cleanParcIds = data.parcIds.filter(
+        (id): id is string => id !== undefined && id !== null && id !== ""
+      );
+
+      // Forcer le type de manière plus radicale
+      const cleanData: any = {
+        name: data.name,
+        typelubrifiantId: data.typelubrifiantId,
+        parcIds: cleanParcIds,
+      };
+
       if (selectedLubrifiant) {
         await updateLubrifiant.mutateAsync({
           id: selectedLubrifiant.id,
-          data,
+          data: cleanData,
         });
       } else {
-        await createLubrifiant.mutateAsync(data);
+        await createLubrifiant.mutateAsync(cleanData);
       }
       handleCloseModal();
     } catch (err) {
@@ -193,15 +205,9 @@ export default function LubrifiantPage() {
           aValue = a.typelubrifiant?.name.toLowerCase() || "";
           bValue = b.typelubrifiant?.name.toLowerCase() || "";
           break;
-        case "createdAt":
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
-        case "usagesCount":
-          aValue =
-            (a._count?.saisielubrifiant || 0) + (a._count?.lubrifiantParc || 0);
-          bValue =
-            (b._count?.saisielubrifiant || 0) + (b._count?.lubrifiantParc || 0);
+        case "parcsCount":
+          aValue = a.parcs?.length || 0;
+          bValue = b.parcs?.length || 0;
           break;
         default:
           return 0;
@@ -424,26 +430,11 @@ export default function LubrifiantPage() {
               <TableHead>
                 <Button
                   variant="ghost"
-                  onClick={() => handleSort("usagesCount")}
+                  onClick={() => handleSort("parcsCount")}
                   className="h-auto p-0 font-semibold"
                 >
-                  Utilisations
-                  {sortField === "usagesCount" &&
-                    (sortDirection === "asc" ? (
-                      <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    ))}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort("createdAt")}
-                  className="h-auto p-0 font-semibold"
-                >
-                  Créé le
-                  {sortField === "createdAt" &&
+                  Parcs
+                  {sortField === "parcsCount" &&
                     (sortDirection === "asc" ? (
                       <ChevronUp className="ml-2 h-4 w-4" />
                     ) : (
@@ -457,7 +448,7 @@ export default function LubrifiantPage() {
           <TableBody>
             {paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={4} className="text-center py-8">
                   {hasActiveFilters
                     ? "Aucun résultat trouvé"
                     : "Aucun lubrifiant trouvé"}
@@ -465,9 +456,7 @@ export default function LubrifiantPage() {
               </TableRow>
             ) : (
               paginatedData.map((lubrifiant) => {
-                const usagesCount =
-                  (lubrifiant._count?.saisielubrifiant || 0) +
-                  (lubrifiant._count?.lubrifiantParc || 0);
+                const parcsCount = lubrifiant.parcs?.length || 0;
                 return (
                   <TableRow key={lubrifiant.id}>
                     <TableCell className="font-medium">
@@ -479,16 +468,9 @@ export default function LubrifiantPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={usagesCount > 0 ? "default" : "secondary"}
-                      >
-                        {usagesCount}
+                      <Badge variant={parcsCount > 0 ? "default" : "secondary"}>
+                        {parcsCount}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(lubrifiant.createdAt).toLocaleDateString(
-                        "fr-FR"
-                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

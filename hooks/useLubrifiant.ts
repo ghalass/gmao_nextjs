@@ -12,6 +12,10 @@ export interface Lubrifiant {
     id: string;
     name: string;
   };
+  parcs?: {
+    id: string;
+    name: string;
+  }[];
   _count?: {
     saisielubrifiant: number;
     lubrifiantParc: number;
@@ -21,6 +25,7 @@ export interface Lubrifiant {
 export interface LubrifiantFormData {
   name: string;
   typelubrifiantId: string;
+  parcIds: string[];
 }
 
 export const useLubrifiant = () => {
